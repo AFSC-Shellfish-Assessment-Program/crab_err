@@ -84,14 +84,15 @@
 # START HERE #### 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-# Load libraries ----
-  library(tidyverse)
-  library(purrr)
-  library(cli) # for colored text
-  library(stringi) # read .txt files
-  library(data.table) # read .txt files??
-  library(rlist) # append to list
+# # Load libraries ----
+#   library(tidyverse)
+#   library(purrr)
+#   library(cli) # for colored text
+#   library(stringi) # read .txt files
+#   library(data.table) # read .txt files??
+#   library(rlist) # append to list
 
+source("./Scripts/setup.R")
 
 # Set recorder, vessel/leg - user needs to do ----
 # (set directories - will use vessel/leg)
@@ -103,14 +104,12 @@
 ##**make a check within the function to make sure vessel/leg inputs are correct??* --> check_inputs()
 ##*would need to do this before setting the paths because they won't work if the leg/vessel is slightly off
   path <- "C:/Users/Shannon.Hennessey/Desktop/onboard error checks/"
-  in_dir <- paste0(path, "QAQC_queue/")
-  clean_dir <- paste0(path, vessel, "/", leg, "/") # clean files, archive, error reports
-
-  sftp_dir <- paste0(path, "to_sFTP/", vessel, "/", leg, "/") # files for sFTP - clean tablet files, error reports, archive??
-  #**is there a way to check for/create the "Crab CATCH Files", "Crab SPECIMEN Files", "RAW Haul Files" folders if they don't exist?
-  #*also need to rewrite db files into here too....
-  backup_dir <- paste0("D:/", vessel, "/", leg, "/") # thumb drive backup, only clean files/error reports
-  #**add directions for how to go in and update a directory if need be??*
+  # in_dir <- paste0(path, "QAQC_queue/")
+  # clean_dir <- paste0(path, vessel, "/", leg, "/") # clean files, archive, error reports
+  # 
+  # sftp_dir <- paste0(path, "to_sFTP/", vessel, "/", leg, "/") # files for sFTP - clean tablet files, error reports, archive??
+  # backup_dir <- paste0("D:/", vessel, "/", leg, "/") # thumb drive backup, only clean files/error reports
+  # #**add directions for how to go in and update a directory if need be??*
 
   
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
@@ -127,70 +126,10 @@
 ##  - if tablet and haul number are same, and list # of files that matches isn't complete, 
 ##     see if there's a complementary timestamp for that haul that makes the set....
 ##  - might add complication to moving files, but we'll see? I think at end, can just move by haul# and don't need timestamp
-  
-  
-# Read in all files first to make list of which hauls to be checked... 
-# - extract haul #, tablet, and timestamp for use down the line....
-  # haul_info_all <- data.frame(FILE = list.files(in_dir, pattern = "_HAUL_", recursive = TRUE)) %>%
-  #                  separate_wider_delim(FILE, "_HAUL", names = c("TABLET", "HAUL_NUMBER", "DATETIME")) %>%
-  #                  mutate(DATETIME = str_sub(DATETIME, 2, 9),
-  #                         TABLET_STR = str_remove(str_sub(TABLET, 1, 6), "_$")) %>%
-  #                  # join with all unique tablet/timestamp combos in queue files to verify have a haul file for them all...
-  #                  # (which should be present for every good haul)
-  #                  full_join(., data.frame(FILE = list.files(in_dir, recursive = TRUE)) %>%
-  #                                  mutate(TABLET_STR = str_remove(str_sub(FILE, 1, 6), "_$"),
-  #                                         DATETIME = str_sub(FILE, -12, -5)) %>%
-  #                                  select(-FILE) %>%
-  #                                  distinct(),
-  #                            by = join_by(DATETIME, TABLET_STR)) %>%
-  #                  # order by haul#, tablet, timestamp:
-  #                  mutate(haul_temp = as.numeric(HAUL_NUMBER),
-  #                         datetime_temp = as.numeric(DATETIME)) %>%
-  #                  arrange(haul_temp, TABLET, datetime_temp) %>%
-  #                  select(-haul_temp, -datetime_temp)
-  
-  haul_info_all <- data.frame(FILE = list.files(in_dir, pattern = ".csv", recursive = TRUE)) %>%
-                   separate_wider_delim(FILE, 
-                                        delim = regex("(_HAUL|_CRAB_SPECIMEN_|_CRAB_CATCH_)"), 
-                                        names = c("TABLET", "HAUL_NUMBER"),
-                                        too_many = "merge") %>%
-                   mutate(DATETIME = str_sub(HAUL_NUMBER, -12, -5),
-                          HAUL_NUMBER = str_sub(HAUL_NUMBER, 1, 4)) %>%
-                   distinct() %>%
-                   arrange(HAUL_NUMBER, TABLET, DATETIME)
-
 
   
-#**popup to verify # and which hauls to be checked?? Ie. there are 4 hauls to be checked, correct?*
-#  and if no, put a reminder to go back and make sure all files are there....
-#  - something to look back/ID any sequential haul #s missing and verify that those are bad hauls?
-#    (or maybe that's something I can do on my end with the temp haul file...)
-# Option for "recheck" if made changes, and wouldn't run this check?
-
-  haul_queue <- unique(haul_info_all$HAUL_NUMBER)
+  haul_info_all <- file_checks_global(path)
   
-  if(length(haul_queue) == 0){
-    cat(col_red("\nNo hauls were identified in the QAQC queue. Please go back and make sure the tablet files are in the appropriate folder.\n"))
-  } else{
-    cat(paste0("\nThe following ", length(haul_queue), " hauls are present in the QAQC queue:\n"))
-    for(n in 1:length(haul_queue)){
-      cat(paste0("   - Haul ", haul_queue[n], "\n"))
-    }
-    
-    queue_check <- menu(c("Yes", "No"), title = "\nDoes this look correct?")
-    
-    if(queue_check == 1){
-      cat("\nYou selected 'Yes'.\nProceeding with the error checking protocol.\n\n") #**maybe update this wording a bit?*
-    }
-    
-    if(queue_check == 2){
-      cat("\nYou selected 'No'.\n\n", sep = "")
-      cat(col_red("Stopping the error checking protocol.\n", sep = ""))
-      cat(col_red("Please review the files in the QAQC queue folder and ensure that the files for all intended hauls are present.\n\n"))
-      
-      break() #**something different to stop the flow?*
-    }
-  }
 
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
@@ -222,68 +161,56 @@
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 ## Create error report template ----  
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-##**CREATE ERROR VECTOR/ITERATOR FOR HAUL*
+  
+  error_report <- report_setup(path = path,
+                               vessel = vessel,
+                               leg = leg,
+                               haul_number = haul_number)
+  
+#**CREATE ERROR VECTOR/ITERATOR FOR HAUL*
   errors <- data.frame(ERROR_TYPE = character(),
                        ERROR_MESSAGE = character(),
                        stringsAsFactors = FALSE)
 
 
-##**READ IN/CHECK FOR ERROR REPORT HERE* --> FUNCTION
-##  - Make note of if one exists, then have a "RE-CHECK" indicated in the file??
-##  - MAKE NOTE IN PROTOCOL --> please don't rename things!!!!
-##  - Will also need to collect some other haul/time info for report output...come up with header format
-# report_file <- list.files(paste0(clean_dir, "_error_reports/"), pattern = paste0(vessel, "_", leg, "_Haul113"))
-  report_file <- list.files(paste0(clean_dir, "_error_reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
-
-
-  if(length(report_file) == 1){
-    # read in existing error report file
-      report <- read.delim(paste0(clean_dir, "_error_reports/", report_file)) 
-    
-    #...then what...create "recheck" header for appending...
-    
-  } else if(length(report_file) == 0){
-    
-    #**DO SOMETHING HERE...*
-    # if it doesn't exist already, create new file....
-    # need some standard things here for header etc. 
-    # How do delim line breaks, blank lines, etc? can we preserve those with output/input through R?
-    
-  } else{
-    # THROW ERROR - multiple files for same haul?? go back and look/reconcile....
-    #**do I want to provide an option to move on to the next haul in the meantime??*
-      cat(col_red("Multiple error report files were detected for Haul ", haul_id, ". \n   To correct this, please:\n"))
-      cat(col_red("      (1) Review the files in the ", vessel, " ", leg, " 'Error Reports' folder;\n"))
-      cat(col_red("      (2) Reconcile any differences and combine into one comprehensive error report file;\n"))
-      cat(col_red("      (3) Delete the extra file(s), and try again.\n\n"))
-      break()
-  }
-
-  
-  #*MOVED THIS CHECK FROM FURTHER UP....* (used to be at line 148)
-  # # throw warning if there's a TABLET_STR/DATETIME combo that doesn't have a 'RAW_HAUL' file in the queue
-  # if(nrow(haul_info_all %>% filter(is.na(HAUL_NUMBER))) > 0){
-  #   cat(col_red(paste0("'RAW_HAUL' files for the following tablet and timestamp combinations are missing from the QAQC queue folder,\nwhile other files with this combination are present:\n")))
-  #   
-  #   # Make object with tablet/timestamp combos with no RAW_HAUL file
-  #   no_haul <- haul_info_all %>% filter(is.na(HAUL_NUMBER))
-  #   
-  #   # Print error for each tablet/timestamp combination 
-  #   for(i in 1:nrow(no_haul)){
-  #     cat(col_red(paste0("   - Tablet starting with '", no_haul$TABLET_STR[i], "' and timestamp '", no_haul$DATETIME[i], "'\n")))
-  #   }
-  #   
-  #   cat(col_red(paste0("\nPlease double check the files in the QAQC queue folder and make sure all relevant tablet files are present before proceeding.\n")))
-  #   cat(col_red(paste0("\nStopping the error checking protocol.\n\n")))
-  #   
-  #   #**some sort of break here if this check is automated??*
-  # }
+# ##**READ IN/CHECK FOR ERROR REPORT HERE* --> FUNCTION
+# ##  - Make note of if one exists, then have a "RE-CHECK" indicated in the file??
+# ##  - MAKE NOTE IN PROTOCOL --> please don't rename things!!!!
+# ##  - Will also need to collect some other haul/time info for report output...come up with header format
+# # report_file <- list.files(paste0(clean_dir, "_error_reports/"), pattern = paste0(vessel, "_", leg, "_Haul113"))
+#   report_file <- list.files(paste0(clean_dir, "_error_reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
+# 
+# 
+#   if(length(report_file) == 1){
+#     # read in existing error report file
+#       report <- read.delim(paste0(clean_dir, "_error_reports/", report_file)) 
+#     
+#     #...then what...create "recheck" header for appending...
+#     
+#   } else if(length(report_file) == 0){
+#     
+#     #**DO SOMETHING HERE...*
+#     # if it doesn't exist already, create new file....
+#     # need some standard things here for header etc. 
+#     # How do delim line breaks, blank lines, etc? can we preserve those with output/input through R?
+#     
+#   } else{
+#     # THROW ERROR - multiple files for same haul?? go back and look/reconcile....
+#     #**do I want to provide an option to move on to the next haul in the meantime??*
+#       cat(col_red("Multiple error report files were detected for Haul ", haul_id, ". \n   To correct this, please:\n"))
+#       cat(col_red("      (1) Review the files in the ", vessel, " ", leg, " 'Error Reports' folder;\n"))
+#       cat(col_red("      (2) Reconcile any differences and combine into one comprehensive error report file;\n"))
+#       cat(col_red("      (3) Delete the extra file(s), and try again.\n\n"))
+#       break
+#   }
 
   
+
 
 
 # Start on first haul of ones in folder
 # - read in all files for first haul....
+  in_dir <- paste0(path, "QAQC_queue/")
   files <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
 #**also read in any previous error report - see above* can use file.append() to add on to it w/ the recheck
 #*and maybe note somewhere that there's a recheck/edits made? indicate some sort of repeat section/header??
@@ -300,101 +227,150 @@
 ## - definitely need to flag CRUISE...with specific definitions/instructions on what it should be (ie. only change for NBS!! (yyyy02; EBS = yyyy01))
   
   
-
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-## ID any note files ----
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-  if(length(list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE)) > 0){
+  # ID any 'Notes' files
+    if(length(list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE)) > 0){
       notes <- list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE) %>%
                map_df(~read.csv(paste0(in_dir, .x))) %>%
                select(HAUL_ID, NOTE_TABLE, NOTES)
-  }
+      
+      # - add any 'NOTES' to error report....
+        for(i in 1:nrow(notes)){
+          # Add note to Error Report
+            error_iter <- nrow(errors) + 1
+            errors[error_iter, 1] <- notes$NOTE_TABLE[i]
+            errors[error_iter, 2] <- notes$NOTES[i]
+        }
+    }
   
-##**this part might not really be necessary?* I don't think we need to print notes, only looking for 0-catches....
-# parse into specimen notes and xx notes by NOTE_TABLE for error report??
-# catch_sample_notes - bin subsample
-# specimen_notes - rotten eggs, etc. 
-# haul_notes - 0-catch station
-
-
-
-
-
-
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-## ID potential zero-catch station ----
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-#
-#**MAKE THIS A FUNCTION TO SOURCE*
-#
-# - if 0-catch, have a little popup Y/N to confirm 0-catch, if Y, outputs that 
-#   as "error report" and moves to next haul
-#
-# - Also, do a 2nd iteration of this when just RAW_HAUL is present without a note?? 
-#  and verify 0-catch and say please add a note??
   
-  if(length(files) == 2 & exists("notes")){
-      no_catch_selection <- menu(c("Yes", "No"), title = paste0("\nWas Haul ", haul_id, " a zero-catch station?"))
-    
-      if(no_catch_selection == 1){
-          move_selection <- menu(c("Yes", "No"), title = "\nYou selected 'Yes' - would you like to move on to the next haul?")
-          
-          if(move_selection == 1){
-              cat("\nYou selected 'Yes'.\n\n", sep = "")
-              
-              ## OUTPUT ERROR REPORT HERE indicating 0-catch station -- make function for outputting error report and call here!!!!
-              error_iter <- nrow(errors) + 1
-              errors[error_iter, 1] <- "No Catch"
-              errors[error_iter, 2] <- paste0("Haul ", haul_id, " is a zero-catch station")
-              
-              ## MOVE FILES
-              
-              cat("Saving Haul ", haul_id, " error report and moving files to the ", vessel, " ", leg, " folders.\n", sep = "") 
-              cat("Starting error checks for the next haul.\n\n", sep = "")
-              
-              next()
-          }
-          
-          if(move_selection == 2){
-              cat("\nYou selected 'No'.\n\n", sep = "")
-              
-              ## OUTPUT ERROR REPORT HERE indicating 0-catch station
-              error_iter <- nrow(errors) + 1
-              errors[error_iter, 1] <- "No Catch"
-              errors[error_iter, 2] <- paste0("Haul ", haul_id, " is a zero-catch station")
-              
-              ## MOVE FILES
-              
-              cat("Saving Haul ", haul_id, " error report and moving files to the ", vessel, " ", leg, " folders.\n", sep = "")
-              cat(col_red("Stopping the error checking protocol.\n\n", sep = ""))
-              
-              break()
-          }
-      } else if(no_catch_selection == 2){
-          cat("You selected 'No'.\n\n")
-          cat(col_red("No 'CATCH' or 'SPECIMEN' files for Haul ", haul_id, " are present in the queue.\n", sep = ""))
-          cat(col_red("Please make sure those files are in the 'QAQC_queue' folder and try again for this haul.\n\n"))
-          
-         #**PRINT ERROR REPORT*
-          error_iter <- nrow(errors) + 1
-          errors[error_iter, 1] <- "File"
-          errors[error_iter, 2] <- paste0("No 'CATCH' or 'SPECIMEN' files are present in the QAQC queue")
-          
-          next_selection <- menu(c("Yes", "No"), title = "\nWould you like to move on to the next haul in the meantime?")
-          
-          if(next_selection == 1){
-              cat("You selected 'Yes'.\n")
-              cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
-              next()
-          }
-          
-          if(next_selection == 2){ #**PRINT ERROR REPORT?*
-              cat(col_red("You selected 'No'.\n"))
-              cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
-              break()
-          }
-    } # do I need a final "else" here? Selection not recognized, please run these lines again?
-  }
+  # Set 'haul_id'
+    haul_id <- str_sub(haul_number, 2, 4)
+  
+  
+  # Check for only 2 files in the haul with a 'Note'
+    if(length(files) == 2 & exists("notes")){
+      
+      
+      # - if 0-catch, have a little popup Y/N to confirm 0-catch, if Y, outputs that 
+      #   as "error report" and moves to next haul
+      #
+      # - Also, do a 2nd iteration of this when just RAW_HAUL is present without a note?? 
+      #  and verify 0-catch and say please add a note??
+      
+        no_catch <- id_zero_catch(files = files, 
+                                  errors = errors,
+                                  vessel = vessel,
+                                  leg = leg,
+                                  haul_number = haul_number,
+                                  path = in_dir)  
+      
+      # Jump to next haul or break, depending on the function output
+        if(no_catch == "next"){
+          next
+        }
+        
+        if(no_catch == "break"){
+          break
+        }
+    }
+  
+  
+
+  
+# ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# ## ID any note files ----
+# ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+#   if(length(list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE)) > 0){
+#       notes <- list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE) %>%
+#                map_df(~read.csv(paste0(in_dir, .x))) %>%
+#                select(HAUL_ID, NOTE_TABLE, NOTES)
+#   }
+#   
+# ##**this part might not really be necessary?* I don't think we need to print notes, only looking for 0-catches....
+# # parse into specimen notes and xx notes by NOTE_TABLE for error report??
+# # catch_sample_notes - bin subsample
+# # specimen_notes - rotten eggs, etc. 
+# # haul_notes - 0-catch station
+# 
+# 
+# 
+# 
+# 
+
+# ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# ## ID potential zero-catch station ----
+# ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# #
+# #**MAKE THIS A FUNCTION TO SOURCE*
+# #
+# # - if 0-catch, have a little popup Y/N to confirm 0-catch, if Y, outputs that 
+# #   as "error report" and moves to next haul
+# #
+# # - Also, do a 2nd iteration of this when just RAW_HAUL is present without a note?? 
+# #  and verify 0-catch and say please add a note??
+#   
+#   if(length(files) == 2 & exists("notes")){
+#       no_catch_selection <- menu(c("Yes", "No"), title = paste0("\nWas Haul ", haul_id, " a zero-catch station?"))
+#     
+#       if(no_catch_selection == 1){
+#           move_selection <- menu(c("Yes", "No"), title = "\nYou selected 'Yes' - would you like to move on to the next haul?")
+#           
+#           if(move_selection == 1){
+#               cat("\nYou selected 'Yes'.\n\n", sep = "")
+#               
+#               ## OUTPUT ERROR REPORT HERE indicating 0-catch station -- make function for outputting error report and call here!!!!
+#               error_iter <- nrow(errors) + 1
+#               errors[error_iter, 1] <- "No Catch"
+#               errors[error_iter, 2] <- paste0("Haul ", haul_id, " is a zero-catch station")
+#               
+#               ## MOVE FILES
+#               
+#               cat("Saving Haul ", haul_id, " error report and moving files to the ", vessel, " ", leg, " folders.\n", sep = "") 
+#               cat("Starting error checks for the next haul.\n\n", sep = "")
+#               
+#               next
+#           }
+#           
+#           if(move_selection == 2){
+#               cat("\nYou selected 'No'.\n\n", sep = "")
+#               
+#               ## OUTPUT ERROR REPORT HERE indicating 0-catch station
+#               error_iter <- nrow(errors) + 1
+#               errors[error_iter, 1] <- "No Catch"
+#               errors[error_iter, 2] <- paste0("Haul ", haul_id, " is a zero-catch station")
+#               
+#               ## MOVE FILES
+#               
+#               cat("Saving Haul ", haul_id, " error report and moving files to the ", vessel, " ", leg, " folders.\n", sep = "")
+#               cat(col_red("Stopping the error checking protocol.\n\n", sep = ""))
+#               
+#               break
+#           }
+#       } else if(no_catch_selection == 2){
+#           cat("You selected 'No'.\n\n")
+#           cat(col_red("No 'CATCH' or 'SPECIMEN' files for Haul ", haul_id, " are present in the queue.\n", sep = ""))
+#           cat(col_red("Please make sure those files are in the 'QAQC_queue' folder and try again for this haul.\n\n"))
+#           
+#          #**PRINT ERROR REPORT*
+#           error_iter <- nrow(errors) + 1
+#           errors[error_iter, 1] <- "File"
+#           errors[error_iter, 2] <- paste0("No 'CATCH' or 'SPECIMEN' files are present in the QAQC queue")
+#           
+#           next_selection <- menu(c("Yes", "No"), title = "\nWould you like to move on to the next haul in the meantime?")
+#           
+#           if(next_selection == 1){
+#               cat("You selected 'Yes'.\n")
+#               cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
+#               next
+#           }
+#           
+#           if(next_selection == 2){ #**PRINT ERROR REPORT?*
+#               cat(col_red("You selected 'No'.\n"))
+#               cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
+#               break
+#           }
+#     } # do I need a final "else" here? Selection not recognized, please run these lines again?
+#   }
 
 
   
@@ -651,7 +627,7 @@
         
       #**SAVE ERROR REPORT*
         cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
-        next()
+        next
       }
       
     # Select "NO" to STOP
@@ -661,7 +637,7 @@
       #**SAVE ERROR REPORT*
         cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
         cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " and make sure only the most current versions are in the queue.\n\n", sep = "")))
-        break()
+        break
       }
     }
   }
@@ -752,7 +728,7 @@
     #**SAVE ERROR REPORT* Think about if need 2 error report locations....
       #*one in QAQC as temp, and then a final one that gets moved once the haul is "approved"?
       cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
-      next()
+      next
     }
     
   # Select "NO" to STOP
@@ -762,7 +738,7 @@
     #**SAVE ERROR REPORT*
       cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n"))
       cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'Queue' folder.\n\n", sep = "")))
-      break()
+      break
     }
   }
     
@@ -899,12 +875,12 @@
     
     if(next_selection == 1){
       cat("You selected 'Yes' - starting error checks for the next haul.\n\n")
-      next()
+      next
     }
     
     if(next_selection == 2){
       cat(col_red("You selected 'No' - stopping the error checking protocol.\n\n"))
-      break()
+      break
     }
   }
   
@@ -927,8 +903,8 @@
       # files_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
       
       # to_archive <- list.files(in_dir, pattern = archive_timestamps, recursive = TRUE) %>% # ok if multiple timestamps, would need to iterate... probs for multiple tablets too?
-        #             map(~file.rename(from = paste0(in_dir, .x),
-        #                              to = paste0(clean_dir, "_archive/", .x)))
+      #               map(~file.rename(from = paste0(in_dir, .x),
+      #                                to = paste0(clean_dir, "_archive/", .x)))
                 
       cat("You selected 'Yes'.\n")
       cat("Tablet files for Haul ", haul_id, " have been moved to the ", vessel, " ", leg, " 'Archive' folder.\n\n", sep = "")
@@ -946,13 +922,13 @@
     if(next_selection == 1){
       cat("You selected 'Yes'.\n")
       cat("Saving Haul ", haul_id, " error report and starting error checks for the next haul.\n\n", sep = "")
-      next()
+      next
     }
     
     if(next_selection == 2){
       cat(col_red("You selected 'No'.\n"))
       cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
-      break()
+      break
     }
     
   }
@@ -969,7 +945,7 @@
   #   cat("Saving Haul ", haul_id, " error report.\n", sep = "") 
   #   cat("Starting error checks for the next haul.\n\n", sep = "")
   #   # cat("You selected 'Yes' - starting error checks for the next haul.\n\n")
-  #   next()
+  #   next
   # }
   # 
   # if(next_selection == 2){
@@ -977,7 +953,7 @@
   #   
   #   cat(col_red("You selected 'No'.\n"))
   #   cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
-  #   break()
+  #   break
   # }
 
 # Y/N move on to next haul?
