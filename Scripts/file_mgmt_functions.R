@@ -91,7 +91,7 @@ copy_files <- function(files, # specify exactly which files we're applying this 
         dir.create(file.path(dest_path, vessel, leg), recursive = TRUE, showWarnings = FALSE)
       
       # Update with full path
-        dest_path <- paste0(path, "to_sFTP/", vessel, "/", leg, "/") 
+        dest_path <- paste0(dest_path, vessel, "/", leg, "/") 
     }
     
     if(destination == "backup"){
@@ -141,6 +141,10 @@ copy_files <- function(files, # specify exactly which files we're applying this 
     
   # For archive files: ----  
     if(file_type == "archive"){
+      
+      # Create archive subfolder if doesn't already exist 
+        dir.create(file.path(dest_path, "_archive/"), recursive = TRUE, showWarnings = FALSE)
+      
       # Set directories
         in_dir <- paste0(path, "QAQC_queue/")
         dest_path <- paste0(dest_path, "_archive/")
