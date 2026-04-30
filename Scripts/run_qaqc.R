@@ -52,6 +52,9 @@
 
 
 # DOUBLE CHECK folder names/syntax --> "Clean", capital Error Report, sFTP queue, USB Backup, "Archive", QA/QC Queue
+#
+# Within the haul loop, code in "final options" based on h vs. length(hauls) so that it will say ending protocol
+# vs. moving on to next haul -- "This is the final haul in the queue. Stopping error checking protocol"
 
 
 
@@ -72,7 +75,7 @@
 
 ##**make a check within the function to make sure vessel/leg inputs are correct??* --> check_inputs()
 ##*would need to do this before setting the paths because they won't work if the leg/vessel is slightly off
-
+  check_inputs()
   
 # Set base directory  
   path <- "C:/Users/Shannon.Hennessey/Desktop/onboard error checks/"
@@ -125,7 +128,7 @@
   
   
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-## Start catch/specimen checks ----
+# Start catch/specimen checks ----
 #  
 # Designate "catch" and "specimen" dfs to be checked
 #**re-calculate/combine catch numbers by species....sum/double check the rounding on #specimens* 
@@ -170,6 +173,10 @@
   
 
 
+##**FUNCTION TO WRITE ERROR REPORT!!**
+
+  
+  
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###  
 ##**AFTER CHECKS ARE DONE:*    
 # summary of any notes associated with haul (e.g. saw rotting clutches, etc.)
@@ -195,11 +202,6 @@
     
  
     #**MOVE FILES*
-    #*need to send to "Crab CATCH Files/", "Crab SPECIMEN Files/", and "RAW Haul Files/"
-    # to_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE) %>%
-    #             # list.files(in_dir, pattern = archive_timestamps, recursive = TRUE) %>% # ok if multiple timestamps, would need to iterate... probs for multiple tablets too?
-    #             map(~file.rename(from = paste0(in_dir, .x),
-    #                              to = paste0(clean_dir, "_archive/", .x)))
     files_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
     to_clean <- move_files(files = files_clean,
                            vessel = vessel,
@@ -213,7 +215,6 @@
     cat("Saving Haul ", haul_id, " error report and moving files to the ", vessel, " ", leg, " folders.\n\n", sep = "") 
 
     
-    #**Also provide options/call functions to copy to sFTP and backup USB*
     copy_selection <- menu(c("Yes", "No"), title = "Would you like to copy the clean tablet files and final error report to the sFTP queue and USB backup?")
       
     if(copy_selection == 1){
@@ -225,7 +226,6 @@
                             path = path, 
                             destination = "sftp")
       
-      #**OK so might have to make each vessel/leg/archive subfolder individually as commands before it'll make the file type folders....
       copyUSB <- copy_files(vessel = vessel,
                             leg = leg, 
                             haul_number = haul_number,
@@ -267,7 +267,7 @@
 
     
     ##**MOVE FILES TO ARCHIVE??*
-    archive_selection <- menu(c("Yes", "No"), title = paste0("Would you like to archive the existing tablet files for Haul ", haul_id, " ?"))
+    archive_selection <- menu(c("Yes", "No"), title = paste0("\nWould you like to archive the existing tablet files for Haul ", haul_id, " ?\n"))
       
     if(archive_selection == 1){
       
@@ -279,28 +279,28 @@
       #               map(~file.rename(from = paste0(in_dir, .x),
       #                                to = paste0(clean_dir, "_archive/", .x)))
                 
-      cat("You selected 'Yes'.\n")
-      cat("Tablet files for Haul ", haul_id, " have been moved to the ", vessel, " ", leg, " 'Archive' folder.\n\n", sep = "")
+      cat("\nYou selected 'Yes'.\n")
+      cat("\nTablet files for Haul ", haul_id, " have been moved to the ", vessel, " ", leg, " 'Archive' folder.\n\n", sep = "")
     }
     
     if(archive_selection == 2){
-      cat(col_red("You selected 'No'.\n"))
-      cat(col_red("Tablet files for Haul ", haul_id, " have not been moved. Please make sure to move these files out of the 'QAQC_queue' folder and into the ", vessel, " ", leg, " 'Archive' folder before running error checks on this haul again.\n\n"))
+      cat(col_red("\nYou selected 'No'.\n"))
+      cat(col_red("\nTablet files for Haul ", haul_id, " have not been moved. Please make sure to move these files out of the 'QAQC_queue' folder and into the ", vessel, " ", leg, " 'Archive' folder before running error checks on this haul again.\n\n"))
     }
 
     
     # Move on to next haul?
-    next_selection <- menu(c("Yes", "No"), title = "Would you like to start error checks for the next haul in the meantime?")
+    next_selection <- menu(c("Yes", "No"), title = "Would you like to start error checks for the next haul in the meantime?\n")
     
     if(next_selection == 1){
-      cat("You selected 'Yes'.\n")
-      cat("Saving Haul ", haul_id, " error report and starting error checks for the next haul.\n\n", sep = "")
+      cat("\nYou selected 'Yes'.\n")
+      cat("\nSaving Haul ", haul_id, " error report and starting error checks for the next haul.\n\n", sep = "")
       next
     }
     
     if(next_selection == 2){
-      cat(col_red("You selected 'No'.\n"))
-      cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
+      cat(col_red("\nYou selected 'No'.\n"))
+      cat(col_red("\nSaving Haul ", haul_id, " error report and stopping the error checking protocol.\n\n"))
       break
     }
     
