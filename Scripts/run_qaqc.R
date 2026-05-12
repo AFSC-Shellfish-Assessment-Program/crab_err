@@ -10,16 +10,6 @@
 ### ### ### ### ### ### ###
 #
 # NOTES: ----
-# - make into functions, and for each haul, print a preliminary error report (ie.
-#   "no errors" or "this is a 0-catch station, correct?") with a Y/N option, and then
-#   ask if you want to move the files to the "clean" folder....that way can say N
-#   for ones that you need to go back to but clear the ones that are good
-#   - and then once fixed, re-error check? and have that append to the separate 
-#     error report for that haul (I think we need separate ones so there can be an
-#     organized followup that says good to go...can we get it to read old errors
-#     and have the user automatically say yes this is ok??)
-
-# - look into txt file interfacing w/ R....or maybe .csv??
 
 #**- when extracting files, do they all have the *exact* same timestamp, or can they vary???
 #    - need to check this when running through all hauls as a test!
@@ -36,11 +26,7 @@
 #* with specimens -- can expand weights from there and ID lg in "small" etc.
 
 # How to append .txt files??
-#**What's the best method for disseminating code fixes if we need some?? GitHub - public repo?*
-
-
-#**Send out a poll to crab team to gauge preferences for QA/QC script functionality and outputs?*
-# - would any other haul-level summaries be helpful?
+# re-error check appends to the separate error report for that haul 
 
 
 #**Things for main function to need:*
@@ -53,44 +39,50 @@
 
 # DOUBLE CHECK folder names/syntax --> "Clean", capital Error Report, sFTP queue, USB Backup, "Archive", QA/QC Queue
 #
-# Within the haul loop, code in "final options" based on h vs. length(hauls) so that it will say ending protocol
+# Within the haul loop, code in "final options" based on [h vs. length(hauls)] so that it will say ending protocol
 # vs. moving on to next haul -- "This is the final haul in the queue. Stopping error checking protocol"
 
 
 
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-# START HERE #### 
+# START HERE for QAQC setup ---------------------------------------------------- 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-# Source setup - libraries, functions, etc. 
-  source("./Scripts/setup.R")
+# Step 1. Source overall workflow setup script - loads libraries, functions, etc. 
+
+  source("./Scripts/functions/setup.R")
 
 
-# Set recorder, vessel/leg - user needs to do ----
-  vessel <- "AKK" #"NWEx"
-  leg <- "Leg1" #"Leg2"
+# Step 2. Set vessel, leg, and person running the error checks
+##        User must specify these objects, and they are sensitive to syntax
+##        Please only use the following exact inputs:
+##           - vessel: "AKK", "NWEx"
+##           - leg: "Leg1", "Leg2, "Leg3", "Leg4"
+
+  vessel <- "AKK"  
+  leg <- "Leg1" 
   recorder <- "Shannon Hennessey"
 
 
-##**make a check within the function to make sure vessel/leg inputs are correct??* --> check_inputs()
-##*would need to do this before setting the paths because they won't work if the leg/vessel is slightly off
-  check_inputs()
+# Step 3. Check inputs to ensure subsequent functions will run smoothly
   
-# Set base directory  
-  path <- "C:/Users/Shannon.Hennessey/Desktop/onboard error checks/"
+  check <- check_inputs(vessel = vessel,
+                        leg = leg, 
+                        recorder = recorder)
   
-
+# Step 4. Run global file checks on all hauls in the QAQC Queue ----------------
+# These will confirm which hauls are present in the queue 
   
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-# Run global file checks ----
-  
-  haul_info_all <- file_checks_global(path)
+  haul_info_all <- file_checks_global(queue_dir)
   
 
-
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-# Run haul-specific file checks ----
+# Run haul-specific file checks ------------------------------------------------
+# For each haul in the queue, these checks will:
+#   - Check for existing Error Reports and create check or recheck template
+#   - Validate vessel, cruise, and station ID entries
+#   - ID potential 0-catch stations
+#   - Inventory files to check for multiple copies and to make sure all tablet files are present
 
 # Loop over hauls
   hauls <- unique(haul_info_all$HAUL_NUMBER)
@@ -127,8 +119,9 @@
     
   
   
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-# Start catch/specimen checks ----
+# Run specimen checks ----------------------------------------------------------
+#**maybe needs to be included in above 'h' loop?*
+# For each haul, check specimen entries for incomplete or implausible biometrics 
 #  
 # Designate "catch" and "specimen" dfs to be checked
 #**re-calculate/combine catch numbers by species....sum/double check the rounding on #specimens* 
@@ -144,8 +137,6 @@
                      NUMBER_CRAB = sum(NUMBER_CRAB, na.rm = TRUE), 
                      .groups = "drop_last")
            # Need to check specimen #s should only be off by 1, right (if 2 tablets)??
-
-
 
 
 # Across all specimens:
@@ -168,17 +159,19 @@
 
   
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-#**SOURCE SPECIMEN CHECK FUNCTION HERE* (see below)
+#**SOURCE SPECIMEN CHECK FUNCTION HERE* 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
   
 
 
-##**FUNCTION TO WRITE ERROR REPORT!!**
+# Write Error Report -----------------------------------------------------------
+  
+  
+  
+  
 
-  
-  
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###  
-##**AFTER CHECKS ARE DONE:*    
+# After checks are complete ----------------------------------------------------
+#
 # summary of any notes associated with haul (e.g. saw rotting clutches, etc.)
 
 # output summary, say will pop up, check it then verify if good/not
@@ -333,14 +326,12 @@
 
 
   
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-# At the end: ----
-### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
   
+# Compile most recent db -------------------------------------------------------
+#  
 #**STOP -- take a look at the error report. Do you need to make any changes??*
 #*If no, do you want to move the files?? if yes, do you want to archive the existing files for the haul??
 
-  
   
 #**Then re-compile catch and specimen db tables!*ONLY* from the "clean" folder (by leg)
 # - should I have a pre-check to make sure there are no duplicate files in the clean??
