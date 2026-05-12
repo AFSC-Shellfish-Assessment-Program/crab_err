@@ -1,12 +1,47 @@
 
 
 # Function to write error report
-report_save <- funtcion(path,
-                        vessel,
+report_save <- function(vessel,
                         leg, 
-                        haul_number){
+                        haul_number,
+                        type){ # temporary vs. final
+  
+  # Run input checks
+    check_inputs(vessel = vessel, 
+                 leg = leg,
+                 recorder = NULL)
   
   
+    types <-  c("temporary", "final")
+  
+  # Check that the argument `stage` is one of the correct options,
+  # and only has one input of the correct type.
+    if(length(x = type) > 1){
+      stop(paste0("Please limit your input to just one report `type`."))
+    }
+    
+    if(!class(type) == "character"){
+      stop(paste0("The `type` argument must be specified as a character. ",
+                  "Please modify your `type` input and try again."))
+    }
+    
+    if(!type %in% types){ 
+      stop(paste0("The `type` argument must be one of the following options",
+                  " (case-sensitive): 'temporary', 'final'. Please modify your report `type` ",
+                  "input and try again."))
+    }
+    
+  
+  # Set directories
+    path <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop"), winslash = "/")
+    in_dir <- paste0(path, "/QAQC_queue/")
+    clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/")
+  
+    
+    
+    
+    
+    
 }
 
 
@@ -16,8 +51,7 @@ report_save <- funtcion(path,
 # and set up iterator for this round 
 
 
-report_setup <- function(path,
-                         vessel,
+report_setup <- function(vessel,
                          leg,
                          haul_number){
   
@@ -32,14 +66,17 @@ report_setup <- function(path,
   ##  - Will also need to collect some other haul/time info for report output...come up with header format
 
   
-  # Set clean directory
-    clean_dir <- paste0(path, vessel, "/", leg, "/")
+  # Set directories
+    path <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop"), winslash = "/")
+    in_dir <- paste0(path, "/QAQC_queue/")
+    clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/")
     
   # Create haul ID for output file naming
     haul_id <- str_remove(haul_number, "^0+")
   
   # Read in existing report file (if any)
-    report_file <- list.files(paste0(clean_dir, "_error_reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
+    report_file_temp <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
+    report_file_clean <- list.files(paste0(clean_dir, "Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
     
     
     if(length(report_file) == 1){
