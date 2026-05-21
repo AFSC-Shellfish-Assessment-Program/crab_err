@@ -2,11 +2,10 @@
 # Function for all haul-level file inventory/management
 
 file_checks_haul <- function(haul_info_all, 
-                             haul_number,
-                             path){
+                             haul_number){
   
   # Set file directory
-    in_dir <- paste0(path, "QAQC_queue/")
+    in_dir <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop/QAQC Queue"), winslash = "/")
   
   
   # Create haul ID for output file naming
@@ -25,8 +24,7 @@ file_checks_haul <- function(haul_info_all,
   ## Create error report template ----  
   ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
   
-    error_report <- report_setup(path = path,
-                                 vessel = vessel,
+    error_report <- report_setup(vessel = vessel,
                                  leg = leg,
                                  haul_number = haul_number)
   
@@ -39,7 +37,7 @@ file_checks_haul <- function(haul_info_all,
   
   # Start on first haul of ones in folder
   # - read in all files for first haul....
-    in_dir <- paste0(path, "QAQC_queue/")
+    # in_dir <- paste0(path, "QAQC_queue/")
     files <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
   
   #**also read in any previous error report - see above* can use file.append() to add on to it w/ the recheck
@@ -67,7 +65,7 @@ file_checks_haul <- function(haul_info_all,
   # ID any 'NOTES' files
     if(length(list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE)) > 0){
       notes <- list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE) %>%
-               map_df(~read.csv(paste0(in_dir, .x))) %>%
+               map_df(~read.csv(paste0(in_dir, "/", .x))) %>%
                select(HAUL_ID, NOTE_TABLE, NOTES)
     
     # Add any 'NOTES' to Error Report
@@ -101,8 +99,7 @@ file_checks_haul <- function(haul_info_all,
                                 errors = errors,
                                 vessel = vessel,
                                 leg = leg,
-                                haul_number = haul_number,
-                                path = in_dir)  
+                                haul_number = haul_number)  
       
       # Jump to next haul or break, depending on the function output
         if(no_catch == "next"){
@@ -181,6 +178,52 @@ file_checks_haul <- function(haul_info_all,
                                               TRUE ~ NA)) %>%
                      ungroup()
     
+    
+  # Verify the number of tablets used ----
+    cat(pluralize("There {?was/were} {length(unique(tablet_combos$TABLET))} Tablet{?s} detected for Haul ", haul_id, "."))
+    
+    tablet_check <- menu(c("Yes", "No"), title = "\nIs this correct?")
+    
+    if(tablet_check == 1){
+        cat("\nYou selected 'Yes'.\nProceeding with the error checking protocol.\n\n")
+    }
+    
+    if(tablet_check == 2){
+        cat("\nYou selected 'No'.\n\n", sep = "")
+      
+      # Option: STOP or SKIP?
+        next_selection <- menu(c("Yes", "No"), title = cat("Would you like to move on to the next haul in the meantime?\n", sep = ""))
+      
+      # Select "YES" to SKIP
+        if(next_selection == 1){
+            cat("\nYou selected 'Yes'.\n\n")
+          
+          #**SAVE ERROR REPORT*/write errors
+            cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
+            cat(rep("-", getOption("width")), sep = "")
+            cat("\n\n\n\n\n\n")
+            
+            haul_checks <- "next"
+            return(haul_checks)
+        }
+      
+      # Select "NO" to STOP
+        if(next_selection == 2){ 
+          cat(col_red("\nYou selected 'No'.\n\n"))
+          
+          #**SAVE ERROR REPORT*
+            cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
+            cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder and ensure that all files for this haul are present.\n\n", sep = "")))
+            cat(rep("-", getOption("width")), sep = "")
+            cat("\n\n\n\n\n\n")
+            
+            haul_checks <- "break"
+            return(haul_checks)
+        }
+    }
+    
+    
+  # Continue with assigning groups...
     combo_id <- 1
     
     for(i in 1:nrow(tablet_combos)){
@@ -282,26 +325,26 @@ file_checks_haul <- function(haul_info_all,
                 # Add note to Error Report
                   error_iter <- nrow(errors) + 1
                   errors[error_iter, 1] <- "File"
-                  errors[error_iter, 2] <- paste0("Duplicate files were detected from tablet '", temp_tablet, "'. '", temp_tablet, "' files for Haul ", haul_id, " with the timestamp '", temp_timestamp, "' were moved to the ", vessel, " ", leg, " 'Archive' folder.")
+                  errors[error_iter, 2] <- paste0("Duplicate files were detected from Tablet '", temp_tablet, "'. '", temp_tablet, "' files for Haul ", haul_id, " with the timestamp '", temp_timestamp, "' were moved to the ", vessel, " ", leg, " 'Archive' folder.")
               }
             
-            # Copy duplicate files to the archive folder in sFTP (and USB backups)
+            # Copy duplicate files to the archive folder in FTP (and USB backups)
             # see if I can combine these commands to do both at once?? 
             # also see if I can do a "cat" return message or something to confirm files have been moved/copied or whatever
-              copy_sFTP <- copy_files(files = to_archive,
-                                      vessel = vessel,
-                                      leg = leg, 
-                                      haul_number = haul_number,
-                                      file_type = "archive", 
-                                      path = path, 
-                                      destination = "sftp")
+              copy_FTP <- copy_files(files = to_archive,
+                                     vessel = vessel,
+                                     leg = leg, 
+                                     haul_number = haul_number,
+                                     file_type = "archive", 
+                                     # path = path, 
+                                     destination = "ftp")
             
               copy_USB <- copy_files(files = to_archive,
                                      vessel = vessel,
                                      leg = leg, 
                                      haul_number = haul_number,
                                      file_type = "archive", 
-                                     path = path, 
+                                     # path = path, 
                                      destination = "backup")
             
             # Move duplicate files to the archive folder  
@@ -309,7 +352,7 @@ file_checks_haul <- function(haul_info_all,
                                        vessel = vessel,
                                        leg = leg, 
                                        haul_number = haul_number,
-                                       path = path, 
+                                       # path = path, 
                                        destination = "archive")
             
             
@@ -326,7 +369,7 @@ file_checks_haul <- function(haul_info_all,
             
             # Print message
               cat("Extra files for Haul ", haul_id, " have been moved to the ", vessel, " ", leg, " 'Archive' folder.\n", sep = "")
-              cat("These files have also been copied to the sFTP queue and USB backup 'Archive' folders.\n\n", sep = "")
+              cat("These files have also been copied to the FTP Queue and USB Backup 'Archive' folders.\n\n", sep = "")
           }
         
         
@@ -346,7 +389,7 @@ file_checks_haul <- function(haul_info_all,
                 # Add note to Error Report
                   error_iter <- nrow(errors) + 1
                   errors[error_iter, 1] <- "File"
-                  errors[error_iter, 2] <- paste0("Duplicate files were detected from tablet '", temp_tablet, ".")
+                  errors[error_iter, 2] <- paste0("Duplicate files were detected from Tablet '", temp_tablet, ".")
               }
             
             
@@ -358,9 +401,9 @@ file_checks_haul <- function(haul_info_all,
                   cat("\nYou selected 'Yes'.\n\n")
                   
                 #**SAVE ERROR REPORT*
-                  cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
+                  cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
                   cat(rep("-", getOption("width")), sep = "")
-                  cat("\n\n")
+                  cat("\n\n\n\n\n\n")
                   
                   haul_checks <- "next"
                   return(haul_checks)
@@ -371,10 +414,10 @@ file_checks_haul <- function(haul_info_all,
                   cat(col_red("\nYou selected 'No'.\n\n"))
                   
                 #**SAVE ERROR REPORT*
-                  cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n"))
+                  cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
                   cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " and make sure only the most current versions are in the queue.\n\n", sep = "")))
                   cat(rep("-", getOption("width")), sep = "")
-                  cat("\n\n")
+                  cat("\n\n\n\n\n\n")
                   
                   haul_checks <- "break"
                   return(haul_checks)
@@ -439,7 +482,7 @@ file_checks_haul <- function(haul_info_all,
             cat(col_red(paste0("- A ", file_type[i], " file is missing from Tablet '", missing_combos$TABLET[m], "' with timestamp '", missing_combos$DATETIME[m], "'\n")), sep = "")
         }  
         
-        cat(col_red("\nPlease make sure the listed files are in the 'Queue' folder and try again for this haul.\n\n"))
+        cat(col_red("\nPlease make sure the listed files are in the 'QAQC Queue' folder and try again for this haul.\n\n"))
       
       #**something here that allows continuing if a CATCH and SPECIMEN file are present, even if other RAW files are missing?*
       #*maybe not, because the specimen checks will depend on the RAW files to add context to subsample??
@@ -453,7 +496,7 @@ file_checks_haul <- function(haul_info_all,
           
           #**SAVE ERROR REPORT* Think about if need 2 error report locations....
           #*one in QAQC as temp, and then a final one that gets moved once the haul is "approved"?
-            cat("Saving Haul", haul_id, "error report and starting error checks for the next haul.\n\n")
+            cat("Saving Haul", haul_id, "temporary Error Report and starting error checks for the next haul.\n\n")
             
             cat(rep("-", getOption("width")), sep = "")
             
@@ -466,8 +509,8 @@ file_checks_haul <- function(haul_info_all,
             cat(col_red("\nYou selected 'No'.\n\n"))
           
           #**SAVE ERROR REPORT*
-            cat(col_red("Saving Haul ", haul_id, " error report and stopping the error checking protocol.\n"))
-            cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QA/QC Queue' folder.\n\n", sep = "")))
+            cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"))
+            cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder.\n\n", sep = "")))
             
             haul_checks <- "break"
             return(haul_checks)

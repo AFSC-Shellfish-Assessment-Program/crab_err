@@ -26,9 +26,9 @@ file_checks_global <- function(path){
     haul_queue <- unique(haul_info_all$HAUL_NUMBER)
     
     if(length(haul_queue) == 0){
-        cat(col_red("\nNo hauls were identified in the QAQC queue. Please go back and make sure the tablet files are in the appropriate folder.\n"))
+        cat(col_red("\nNo hauls were identified in the QAQC Queue. Please go back and make sure the tablet files are in the appropriate folder.\n"))
     } else{
-        cat(paste0("\nThe following ", length(haul_queue), " hauls are present in the QAQC queue:\n"))
+        cat(paste0("\nThe following ", length(haul_queue), " hauls are present in the QAQC Queue:\n"))
         for(n in 1:length(haul_queue)){
             cat(paste0("   - Haul ", haul_queue[n], "\n"))
         }
@@ -42,9 +42,9 @@ file_checks_global <- function(path){
         if(queue_check == 2){
             cat("\nYou selected 'No'.\n\n", sep = "")
             cat(col_red("Stopping the error checking protocol.\n", sep = ""))
-            cat(col_red("Please review the files in the QAQC queue folder and ensure that the files for all intended hauls are present.\n\n"))
+            cat(col_red("Please review the files in the 'QAQC Queue' folder and ensure that the files for all intended hauls are present.\n\n"))
             cat(rep("-", getOption("width")), sep = "")
-            cat("\n\n")
+            cat("\n\n\n\n\n\n")
             
             # break() #**something different to stop the flow?*
         }
