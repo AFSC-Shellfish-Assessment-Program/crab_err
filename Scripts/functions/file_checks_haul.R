@@ -18,15 +18,15 @@ file_checks_haul <- function(haul_info_all,
   
   #**PRINT SOMETHING HERE for commentary?* "starting xx checks for haul xx...."
   # -- as part of main workflow function before calling smaller functions
-    cat("\nStarting file checks for Haul ", haul_id, ".\n\n", sep = "")
+    cat("\nStarting file checks for Haul ", haul_id, ".\n\n\n\n", sep = "")
   
   ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
   ## Create error report template ----  
   ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
   
-    error_report <- report_setup(vessel = vessel,
-                                 leg = leg,
-                                 haul_number = haul_number)
+    # error_report <- report_check(vessel = vessel,
+    #                              leg = leg,
+    #                              haul_number = haul_number)
   
   #**CREATE ERROR VECTOR/ITERATOR FOR HAUL*
     errors <- data.frame(ERROR_TYPE = character(),
