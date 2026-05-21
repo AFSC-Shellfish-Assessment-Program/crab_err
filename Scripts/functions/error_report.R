@@ -51,7 +51,7 @@ report_save <- function(vessel,
 # and set up iterator for this round 
 
 
-report_setup <- function(vessel,
+report_check <- function(vessel,
                          leg,
                          haul_number){
   
@@ -78,10 +78,13 @@ report_setup <- function(vessel,
     report_file_temp <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
     report_file_clean <- list.files(paste0(clean_dir, "Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
     
-    
-    if(length(report_file) == 1){
+    if(length(report_file_clean) > 0){
+      
+      stop(paste0("An Error Report for Haul ", haul_id, " was found in the 'clean' directory. Please go back and review this error report "))
+      
+    } else if(length(report_file_temp) == 1){
       # Read in existing error report file
-        report <- read.delim(paste0(clean_dir, "_error_reports/", report_file)) 
+        report <- read.delim(paste0(clean_dir, "Error Reports/", report_file)) 
       
       #**...then what...create "recheck" header for appending...*
       
@@ -89,7 +92,7 @@ report_setup <- function(vessel,
         cat("A prior Error Report is detected for Haul ", haul_id, ".\n", sep = "")
         cat("Reading in the existing file and setting up the 'Recheck' header.\n\n", sep = "")
       
-    } else if(length(report_file) == 0){
+    } else if((length(report_file_temp) & length(report_file_clean)) == 0){
       
       #**DO SOMETHING HERE...*
       # if it doesn't exist already, create new file....
@@ -104,11 +107,11 @@ report_setup <- function(vessel,
       # THROW ERROR - multiple files for same haul?? go back and look/reconcile....
       #**do I want to provide an option to move on to the next haul in the meantime??*
         cat(col_red("Multiple Error Report files were detected for Haul ", haul_id, ". \n   To correct this, please:\n"))
-        cat(col_red("      (1) Review the files in the ", vessel, " ", leg, " 'Error Reports' folder;\n"))
+        cat(col_red("      (1) Review the files in the 'Temporary Error Reports' folder on the Desktop;\n"))
         cat(col_red("      (2) Reconcile any differences and combine into one comprehensive Error Report file;\n"))
         cat(col_red("      (3) Delete the extra file(s), and try again.\n\n"))
         cat(rep("-", getOption("width")), sep = "")
-        cat("\n\n")
+        cat("\n\n\n\n\n\n")
         # break()
     }
     

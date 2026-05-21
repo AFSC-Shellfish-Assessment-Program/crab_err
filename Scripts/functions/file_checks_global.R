@@ -36,7 +36,7 @@ file_checks_global <- function(path){
         queue_check <- menu(c("Yes", "No"), title = "\nDoes this look correct?")
         
         if(queue_check == 1){
-            cat("\nYou selected 'Yes'.\nProceeding with the error checking protocol.\n\n") #**maybe update this wording a bit?*
+            cat("\nYou selected 'Yes'.\nPlease proceed with the error checking protocol.\n\n") #**maybe update this wording a bit?*
         }
         
         if(queue_check == 2){

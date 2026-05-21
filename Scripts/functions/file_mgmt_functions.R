@@ -278,5 +278,5 @@ compile_db_files <- function(vessel,
     
     
   # Print message confirming db files have been copied to the FTP queue and the USB backup
-    cat("These files have also been copied to the FTP queue and the ", vessel, " ", leg, " USB backup.\n\n", sep = "")
+    cat("These files have also been copied to the 'FTP Queue' folder and the ", vessel, " ", leg, " USB Backup.\n\n\n\n", sep = "")
 }
