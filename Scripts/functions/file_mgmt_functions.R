@@ -233,13 +233,13 @@ compile_db_files <- function(vessel,
   
   
   # Read in, combine, and save clean 'Crab Specimen' files
-    specimen_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/"), pattern = paste0("_CRAB_SPECIMEN_"), recursive = TRUE) %>%
+    specimen_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/"), pattern = paste0("_CRAB_SPECIMEN_"), recursive = FALSE) %>%
                    map_df(~read.csv(paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/", .x))) %>%
                    write.csv(., paste0(clean_dir, "SPECIMEN_db.csv"), row.names = FALSE)
   
   
   # Read in, combine, and save clean 'Crab Catch' files
-    catch_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/"), pattern = paste0("_CRAB_CATCH_"), recursive = TRUE) %>%
+    catch_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/"), pattern = paste0("_CRAB_CATCH_"), recursive = FALSE) %>%
                 map_df(~read.csv(paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/", .x))) %>%
                 # group_by(VESSEL, CRUISE, HAUL, STATION, COMMON_NAME, SPECIES_CODE) %>%
                 # # combine weights and catch numbers by species (if 2 tablets were used for the haul)
