@@ -3,7 +3,8 @@
 
 check_inputs <- function(vessel = c("AKK", "NWEx"), 
                          leg = c("Leg1", "Leg2", "Leg3", "Leg4"),
-                         recorder){
+                         recorder,
+                         message){
   
   # Set valid inputs -- these may need to be updated every year
     vessels <- c("AKK", "NWEx")
@@ -56,5 +57,9 @@ check_inputs <- function(vessel = c("AKK", "NWEx"),
         stop(paste0("The `recorder` argument must be specified as a character. ",
                     "Please modify your `recorder` input and try again."))
       } 
+    }
+    
+    if(message == TRUE){
+      return(cat("\nKey inputs have been validated.\n\n"))
     }
 }
