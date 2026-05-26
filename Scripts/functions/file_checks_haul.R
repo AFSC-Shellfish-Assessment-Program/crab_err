@@ -2,7 +2,9 @@
 # Function for all haul-level file inventory/management
 
 file_checks_haul <- function(haul_info_all, 
-                             haul_number){
+                             haul_number,
+                             errors,
+                             final_haul){
   
   # Set file directory
     in_dir <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop/QAQC Queue"), winslash = "/")
@@ -19,20 +21,6 @@ file_checks_haul <- function(haul_info_all,
   #**PRINT SOMETHING HERE for commentary?* "starting xx checks for haul xx...."
   # -- as part of main workflow function before calling smaller functions
     cat("\nStarting file checks for Haul ", haul_id, ".\n\n\n\n", sep = "")
-  
-  ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-  ## Create error report template ----  
-  ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
-  
-    # error_report <- report_check(vessel = vessel,
-    #                              leg = leg,
-    #                              haul_number = haul_number)
-  
-  #**CREATE ERROR VECTOR/ITERATOR FOR HAUL*
-    errors <- data.frame(ERROR_TYPE = character(),
-                         ERROR_MESSAGE = character(),
-                         stringsAsFactors = FALSE)
-  
   
   
   # Start on first haul of ones in folder
@@ -99,7 +87,8 @@ file_checks_haul <- function(haul_info_all,
                                 errors = errors,
                                 vessel = vessel,
                                 leg = leg,
-                                haul_number = haul_number)  
+                                haul_number = haul_number,
+                                final_haul = final_haul)  
       
       # Jump to next haul or break, depending on the function output
         if(no_catch == "next"){
@@ -191,34 +180,52 @@ file_checks_haul <- function(haul_info_all,
     if(tablet_check == 2){
         cat("\nYou selected 'No'.\n\n", sep = "")
       
-      # Option: STOP or SKIP?
-        next_selection <- menu(c("Yes", "No"), title = cat("Would you like to move on to the next haul in the meantime?\n", sep = ""))
       
-      # Select "YES" to SKIP
-        if(next_selection == 1){
-            cat("\nYou selected 'Yes'.\n\n")
+      # Options for final haul/to skip to next
+        if(final_haul == TRUE){
           
-          #**SAVE ERROR REPORT*/write errors
-            cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
-            cat(rep("-", getOption("width")), sep = "")
-            cat("\n\n\n\n\n\n")
-            
-            haul_checks <- "next"
-            return(haul_checks)
-        }
+          cat("This is the final haul in the QAQC Queue. Saving Haul", haul_id, "temporary Error Report and stopping the error checking protocol.\n\n") 
+          # More instructions here?? Please validate things, or continue with the final lines of the script or something?
+          cat(rep("-", getOption("width")), sep = "")
+          cat("\n\n\n\n\n\n")
+          
+          
+          haul_checks <- "break"
+          return(haul_checks)
+        } 
+        
       
-      # Select "NO" to STOP
-        if(next_selection == 2){ 
-          cat(col_red("\nYou selected 'No'.\n\n"))
+        if(final_haul == FALSE){
           
-          #**SAVE ERROR REPORT*
-            cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
-            cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder and ensure that all files for this haul are present.\n\n", sep = "")))
-            cat(rep("-", getOption("width")), sep = "")
-            cat("\n\n\n\n\n\n")
-            
-            haul_checks <- "break"
-            return(haul_checks)
+          # Option: STOP or SKIP?
+            next_selection <- menu(c("Yes", "No"), title = cat("Would you like to move on to the next haul in the meantime?\n", sep = ""))
+          
+          # Select "YES" to SKIP
+            if(next_selection == 1){
+              cat("\nYou selected 'Yes'.\n\n")
+              
+              #**SAVE ERROR REPORT*/write errors
+              cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
+              cat(rep("-", getOption("width")), sep = "")
+              cat("\n\n\n\n\n\n")
+              
+              haul_checks <- "next"
+              return(haul_checks)
+            }
+          
+          # Select "NO" to STOP
+            if(next_selection == 2){ 
+              cat(col_red("\nYou selected 'No'.\n\n"))
+              
+              #**SAVE ERROR REPORT*
+              cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
+              cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder and ensure that all files for this haul are present.\n\n", sep = "")))
+              cat(rep("-", getOption("width")), sep = "")
+              cat("\n\n\n\n\n\n")
+              
+              haul_checks <- "break"
+              return(haul_checks)
+            }
         }
     }
     
@@ -393,34 +400,53 @@ file_checks_haul <- function(haul_info_all,
               }
             
             
-            # Option: STOP or SKIP?
-              next_selection <- menu(c("Yes", "No"), title = cat(col_red("\nFiles for Haul ", haul_id, " need cleaning up before the error checking for this haul can proceed."), "\n\nWould you like to move on to the next haul in the meantime?\n", sep = ""))
-            
-            # Select "YES" to SKIP
-              if(next_selection == 1){
-                  cat("\nYou selected 'Yes'.\n\n")
-                  
-                #**SAVE ERROR REPORT*
-                  cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
-                  cat(rep("-", getOption("width")), sep = "")
-                  cat("\n\n\n\n\n\n")
-                  
-                  haul_checks <- "next"
-                  return(haul_checks)
-              }
-            
-            # Select "NO" to STOP
-              if(next_selection == 2){ 
-                  cat(col_red("\nYou selected 'No'.\n\n"))
-                  
-                #**SAVE ERROR REPORT*
-                  cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
-                  cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " and make sure only the most current versions are in the queue.\n\n", sep = "")))
-                  cat(rep("-", getOption("width")), sep = "")
-                  cat("\n\n\n\n\n\n")
-                  
-                  haul_checks <- "break"
-                  return(haul_checks)
+            # Print error
+              cat(col_red("\nFiles for Haul ", haul_id, " need cleaning up before the error checking for this haul can proceed.\n\n"), sep = "")
+              
+            # If this is final haul, print error, stop checks
+              if(final_haul == TRUE){
+                cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " and make sure only the most current versions are in the queue.\n\n", sep = "")))
+                cat("This is the final haul in the QAQC Queue. Saving the Haul", haul_id, "temporary Error Report and stopping the error checking protocol.\n\n")
+                cat(rep("-", getOption("width")), sep = "")
+                cat("\n\n\n\n\n\n")
+                # More instructions here?? Please validate things, or continue with the final lines of the script or something?
+                
+                haul_checks <- "break"
+                return(haul_checks)
+              } 
+              
+              
+            # If this was not the final haul, print message: Move to next haul? (YES/NO)
+              if(final_haul == FALSE){
+                # Option: STOP or SKIP?
+                  next_selection <- menu(c("Yes", "No"), title = cat("\n\nWould you like to move on to the next haul in the meantime?\n", sep = ""))
+                
+                # Select "YES" to SKIP
+                  if(next_selection == 1){
+                    cat("\nYou selected 'Yes'.\n\n")
+                    
+                    #**SAVE ERROR REPORT*
+                    cat("Saving Haul ", haul_id, " temporary Error Report and starting error checks for the next haul.\n\n", sep = "")
+                    cat(rep("-", getOption("width")), sep = "")
+                    cat("\n\n\n\n\n\n")
+                    
+                    haul_checks <- "next"
+                    return(haul_checks)
+                  }
+                
+                # Select "NO" to STOP
+                  if(next_selection == 2){ 
+                    cat(col_red("\nYou selected 'No'.\n\n"))
+                    
+                    #**SAVE ERROR REPORT*
+                    cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"), sep = "")
+                    cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " and make sure only the most current versions are in the queue.\n\n", sep = "")))
+                    cat(rep("-", getOption("width")), sep = "")
+                    cat("\n\n\n\n\n\n")
+                    
+                    haul_checks <- "break"
+                    return(haul_checks)
+                  }
               }
          }
     }
@@ -487,40 +513,57 @@ file_checks_haul <- function(haul_info_all,
       #**something here that allows continuing if a CATCH and SPECIMEN file are present, even if other RAW files are missing?*
       #*maybe not, because the specimen checks will depend on the RAW files to add context to subsample??
       
-      # Print menu to select whether or not to move onto the next haul or stop the error checking protocol
-        next_selection <- menu(c("Yes", "No"), title = "Would you like to move on to the next haul in the meantime?")
-      
-      # Select "YES" to SKIP
-        if(next_selection == 1){
-            cat("\nYou selected 'Yes'.\n\n")
+        
+        if(final_haul == TRUE){
+          cat("This is the final haul in the QAQC Queue. Stopping the error checking protocol.\n\n") 
+          # More instructions here?? Please validate things, or continue with the final lines of the script or something?
           
-          #**SAVE ERROR REPORT* Think about if need 2 error report locations....
-          #*one in QAQC as temp, and then a final one that gets moved once the haul is "approved"?
-            cat("Saving Haul", haul_id, "temporary Error Report and starting error checks for the next haul.\n\n")
-            
-            cat(rep("-", getOption("width")), sep = "")
-            
-            haul_checks <- "next"
-            return(haul_checks)
-        }
-      
-      # Select "NO" to STOP
-        if(next_selection == 2){ 
-            cat(col_red("\nYou selected 'No'.\n\n"))
+          haul_checks <- "break"
+          return(haul_checks)
+        } 
+        
+        
+      # If this was not the final haul, print message: Move to next haul? (YES/NO)
+        if(final_haul == FALSE){
           
-          #**SAVE ERROR REPORT*
-            cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"))
-            cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder.\n\n", sep = "")))
-            
-            haul_checks <- "break"
-            return(haul_checks)
+          # Print menu to select whether or not to move onto the next haul or stop the error checking protocol
+            next_selection <- menu(c("Yes", "No"), title = "Would you like to move on to the next haul in the meantime?")
+          
+          # Select "YES" to SKIP
+            if(next_selection == 1){
+              cat("\nYou selected 'Yes'.\n\n")
+              
+              #**SAVE ERROR REPORT* Think about if need 2 error report locations....
+              #*one in QAQC as temp, and then a final one that gets moved once the haul is "approved"?
+              cat("Saving Haul", haul_id, "temporary Error Report and starting error checks for the next haul.\n\n")
+              
+              cat(rep("-", getOption("width")), sep = "")
+              
+              haul_checks <- "next"
+              return(haul_checks)
+            }
+          
+          # Select "NO" to STOP
+            if(next_selection == 2){ 
+              cat(col_red("\nYou selected 'No'.\n\n"))
+              
+              #**SAVE ERROR REPORT*
+              cat(col_red("Saving Haul ", haul_id, " temporary Error Report and stopping the error checking protocol.\n"))
+              cat(col_red(paste0("Please review the tablet files for Haul ", haul_id, " in the 'QAQC Queue' folder.\n\n", sep = "")))
+              
+              haul_checks <- "break"
+              return(haul_checks)
+            }
         }
     }
   
     
-    cat("\nA complete suite of files for Haul ", haul_id, " is present in the queue. Proceeding to Catch and Specimen checks.\n\n", sep = "")
+    cat("\nA complete suite of files for Haul ", haul_id, " is present in the queue. Proceeding to Specimen checks.\n\n", sep = "")
   
-    return(list(errors = errors))
+    return(list(errors = errors,
+                haul_info_all = haul_info_all, # might not need to pass an updated df for this?
+                haul_info = haul_info,
+                files_all = files_all))
 }
 
 
