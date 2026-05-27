@@ -1,5 +1,15 @@
 
-# file_checks_global
+# Function: file_checks_global -------------------------------------------------
+#
+# Purpose: To detect all haul numbers present in the QAQC Queue and have the user
+#          verify that these are the correct hauls to be checked. Gives the user 
+#          an opportunity to recognize that files for a certain haul have not been 
+#          either extracted from the tablet, copied to the Survey Laptop, or added
+#          to the 'QAQC Queue' folder on the Desktop.
+#          The `haul_info_all` object is then passed to the haul checking functions
+#          in the subsequent lines of the script workflow.
+#
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
 
 
 file_checks_global <- function(path){
@@ -15,16 +25,11 @@ file_checks_global <- function(path){
                      distinct() %>%
                      arrange(HAUL_NUMBER, TABLET, DATETIME)
   
-  
-  
-  #**popup to verify # and which hauls to be checked?? Ie. there are 4 hauls to be checked, correct?*
-  #  and if no, put a reminder to go back and make sure all files are there....
-  #  - something to look back/ID any sequential haul #s missing and verify that those are bad hauls?
-  #    (or maybe that's something I can do on my end with the temp haul file...)
-  # Option for "recheck" if made changes, and wouldn't run this check?
-  
+  # Identify all unique haul numbers in the queue
     haul_queue <- unique(haul_info_all$HAUL_NUMBER)
     
+    
+  # Print message confirming the hauls detected in the queue  
     if(length(haul_queue) == 0){
         cat(col_red("\nNo hauls were identified in the QAQC Queue. Please go back and make sure the tablet files are in the appropriate folder.\n"))
     } else{
@@ -36,21 +41,18 @@ file_checks_global <- function(path){
         queue_check <- menu(c("Yes", "No"), title = "\nDoes this look correct?")
         
         if(queue_check == 1){
-            cat("\nYou selected 'Yes'.\nPlease proceed with the error checking protocol.\n\n") #**maybe update this wording a bit?*
+            cat("\nYou selected 'Yes'.\nPlease proceed with the error checks.\n\n") 
         }
         
         if(queue_check == 2){
             cat("\nYou selected 'No'.\n\n", sep = "")
-            cat(col_red("Stopping the error checking protocol.\n", sep = ""))
+            cat(col_red("Stopping the error checks.\n", sep = ""))
             cat(col_red("Please review the files in the 'QAQC Queue' folder and ensure that the files for all intended hauls are present.\n\n"))
             cat(rep("-", getOption("width")), sep = "")
             cat("\n\n\n\n\n\n")
-            
-            # break() #**something different to stop the flow?*
         }
     }
   
-  
-    return(haul_info_all) #anything else need to carry through??
+    return(haul_info_all)
 }
 
