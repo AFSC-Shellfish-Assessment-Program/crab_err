@@ -1,12 +1,20 @@
-# Function to check vessel, leg, and recorder inputs for all QAQC functions
-# - ensures valid inputs so file and folder directories are correct
 
-check_inputs <- function(vessel = c("AKK", "NWEx"), 
-                         leg = c("Leg1", "Leg2", "Leg3", "Leg4"),
-                         recorder,
+# Function: check_inputs -------------------------------------------------------
+#
+# Purpose: Function to check vessel, leg, and recorder inputs for QAQC functions.
+#          Ensures valid inputs so metadata and folder directories are correct.
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
+
+
+check_inputs <- function(metadata,
                          message){
   
-  # Set valid inputs -- these may need to be updated every year
+  # Unpack metadata
+    vessel <- metadata$vessel
+    leg <- metadata$leg
+    recorder <- metadata$recorder
+  
+  # Set valid inputs -- these need to be updated every year
     vessels <- c("AKK", "NWEx")
     legs <-  c("Leg1", "Leg2", "Leg3", "Leg4")
   
@@ -14,7 +22,7 @@ check_inputs <- function(vessel = c("AKK", "NWEx"),
   # Check that the `vessel` argument is one of the correct options,
   # and only has one input of the correct type.
     if(length(x = vessel) > 1){
-      stop(paste0("The error checking protocol is designed to only be run for one vessel at",
+      stop(paste0("The error checks are designed to only be run for one vessel at",
                   " a time. Please limit your query to just one vessel."))
     }
     
@@ -34,7 +42,7 @@ check_inputs <- function(vessel = c("AKK", "NWEx"),
   # Check that the `leg` argument is one of the correct options,
   # and only has one input of the correct type.
     if(length(x = leg) > 1){
-      stop(paste0("The error checking protocol is designed to only be run for one leg at",
+      stop(paste0("The error checks are designed to only be run for one leg at",
                   " a time. Please limit your query to just one leg."))
     }
     
