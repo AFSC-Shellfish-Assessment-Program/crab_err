@@ -1,10 +1,13 @@
 
-# Run all checks for a given haul
+# Function: haul_checks --------------------------------------------------------
+#
+# Purpose: Run all checks for a given haul
+#
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
 
-haul_checks <- function(haul_info_all,
-                        vessel,
-                        leg,
-                        recorder){
+
+haul_checks <- function(metadata,
+                        haul_info_all){
   
   # Run haul-specific checks 
   # For each haul in the queue, these checks will:
@@ -31,18 +34,18 @@ haul_checks <- function(haul_info_all,
         final_haul <- ifelse(h == length(hauls), TRUE, FALSE)
       
         
-      # Run Error Report checks and setup
-        error_report <- report_check(vessel = vessel,
-                                     leg = leg,
+      # Run Error Report checks and setup --------------------------------------
+        error_report <- report_check(metadata = metadata,
                                      haul_number = haul_number)
         
       # If report_check returns a list, propagate that through
-        if(is.list(error_report)){
-          report <- file_checks$report
-          report_date <- file_checks$report_date
-          report_time <- file_checks$report_time
-          recheck <- file_checks$recheck
-        }
+        #**maybe don't have to unpack this?? can feed to the report_save function as a bundle??*
+        # if(is.list(error_report)){
+        #   report <- error_report$report
+        #   report_date <- error_report$report_date
+        #   report_time <- error_report$report_time
+        #   recheck <- error_report$recheck
+        # }
         
       # If haul_checks returns a character, set 'break' for the haul loop
         if(is.character(error_report)){
@@ -59,9 +62,9 @@ haul_checks <- function(haul_info_all,
         }
         
         
-      #**CREATE ERROR VECTOR/ITERATOR FOR HAUL*
-        errors <- data.frame(ERROR_TYPE = character(),
-                             ERROR_MESSAGE = character(),
+      # Create vector and iterator for errors
+        errors <- data.frame(MESSAGE_TYPE = character(),
+                             MESSAGE = character(),
                              stringsAsFactors = FALSE)
         
         
@@ -69,7 +72,10 @@ haul_checks <- function(haul_info_all,
       # Run file checks for haul -----------------------------------------------
         file_checks <- file_checks_haul(haul_info_all = haul_info_all,
                                         haul_number = haul_number,
-                                        final_haul = final_haul)
+                                        errors = errors,
+                                        error_report = error_report,
+                                        final_haul = final_haul,
+                                        metadata = metadata)
       
       # If haul_checks returns a list of errors, propagate that through
         if(is.list(file_checks)){
@@ -94,32 +100,34 @@ haul_checks <- function(haul_info_all,
       # Run specimen checks ----------------------------------------------------
         specimen_errs <- specimen_checks(files_all = files_all,
                                          haul_info = haul_info,
+                                         haul_number = haul_number,
                                          errors = errors)
         
-          # If haul_checks returns a list of errors, propagate that through
-            if(is.list(specimen_errs)){
-              errors <- specimen_errs$errors
-            }
+      # If haul_checks returns a list of errors, propagate that through
+        if(is.list(specimen_errs)){
+          errors <- specimen_errs$errors
+        }
 
       
         
         
 
       # Run final haul checks/options ------------------------------------------  
-      # Automatically print EVERY error report in to the Temporary Error Reports folder
+      # Automatically print EVERY error report in to the Temporary Error Reports folder? Except for ALL CLEAN ones?
       #**STOP -- take a look at the error report. Do you need to make any changes??*
       #**ANNOTATE ANYTHING IN TEMP ERROR REPORT BEFORE PROCEEDING!!*
       #*Do not add notes to error report once in "clean" or else will not get backed up/FTPd
-        final_checks <- final_haul_checks(haul_id = haul_id,
+        final_checks <- final_haul_checks(haul_number = haul_number,
                                           errors = errors,
-                                          final_haul = final_haul)
+                                          final_haul = final_haul,
+                                          metadata = metadata)
         
         
         
-        
+      #**ANYTHING HERE TO CLEAN UP THINGS?*
+      #*e.g. "out" or any other objects that might mess things up down the line?
         
     } # end haul loop
 
     return()
-  
 }
