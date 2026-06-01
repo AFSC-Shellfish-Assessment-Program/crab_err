@@ -1,4 +1,5 @@
-# File management functions (move, copy, compile_db):
+
+# Script for file management functions (move, copy, compile_db) ----------------
 
 
 ## different actions/locations:
@@ -19,18 +20,33 @@
 ##*how do we incorporate this with additional errors after we think they're clean...maybe I just take care of post-hoc
 
 
+# Function: move_files ---------------------------------------------------------
+#
+# Purpose: 
+#
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
+
 move_files <- function(files, # feed function a list of files (either ALL files for clean, or files for archive)
-                       vessel,
-                       leg, 
+                       metadata,
                        haul_number,
-                       # path, 
+                       file_type = c("tablet", "error_report"),
                        destination = c("clean", "archive")){
+  
+  
+  # Unpack metadata
+    vessel <- metadata$vessel
+    leg <- metadata$leg
+    recorder <- metadata$recorder
+  
+    
+  # Create haul ID for output file naming
+    haul_id <- str_remove(haul_number, "^0+")
+  
   
   # Set directories
     path <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop"), winslash = "/")
-    in_dir <- paste0(path, "/QAQC_queue/")
+    in_dir <- paste0(path, "/QAQC Queue/")
     
-    #**NEED TO UPDATE THESE FOR FINAL!!*
     if(destination == "clean"){
       clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/")
     }
@@ -39,40 +55,61 @@ move_files <- function(files, # feed function a list of files (either ALL files 
       clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/Data Files from Tablet/Archive/")
     }
     
-  
-  # Move CRAB_CATCH files
-    catch <- files[grepl(paste0("_CRAB_CATCH_", haul_number), files)] %>%
-             map(~file.rename(from = paste0(in_dir, .x),
-                              to = paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/", .x)))
-  
-  # Move CRAB_SPECIMEN files
-    specimen <- files[grepl(paste0("_CRAB_SPECIMEN_", haul_number), files)] %>%
+    
+  # Move tablet files
+    if(file_type == "tablet"){
+      # Move CRAB_CATCH files
+        catch <- files[grepl(paste0("_CRAB_CATCH_", haul_number), files)] %>%
                 map(~file.rename(from = paste0(in_dir, .x),
-                                 to = paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/", .x)))
-  
-  # Move RAW files
-    raw <- files[grepl(paste0("_HAUL", haul_number), files)] %>%
-           map(~file.rename(from = paste0(in_dir, .x),
-                            to = paste0(clean_dir, "Data Files from Tablet/RAW Haul Files/", .x)))
-  
-  # Move Error Report file
-    report <- list.files(paste0(clean_dir, "Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))%>%
-              map(~file.rename(from = paste0(in_dir, .x),
-                               to = paste0(clean_dir, "Error Reports/", .x)))
-  
+                                 to = paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/", .x)))
+      
+      # Move CRAB_SPECIMEN files
+        specimen <- files[grepl(paste0("_CRAB_SPECIMEN_", haul_number), files)] %>%
+                    map(~file.rename(from = paste0(in_dir, .x),
+                                     to = paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/", .x)))
+      
+      # Move RAW files
+        raw <- files[grepl(paste0("_HAUL", haul_number), files)] %>%
+               map(~file.rename(from = paste0(in_dir, .x),
+                                to = paste0(clean_dir, "Data Files from Tablet/RAW Haul Files/", .x)))
+    } # end tablet section
+    
+    
+  # Move report files
+    if(file_type == "error_report"){
+      # Move Error Report file
+        report <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id)) %>% 
+                  map(~file.rename(from = paste0(path, "/Temporary Error Reports/", .x),
+                                   to = paste0(clean_dir, "Error Reports/", .x)))
+    } # end report section
+    
   return()
 }
 
 
 
+# Function: copy_files ---------------------------------------------------------
+#
+# Purpose: 
+#
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
+
 # Copy to FTP or USB Backup
 copy_files <- function(files, # specify exactly which files we're applying this to, and then if it's ever to archive, then that'll also copy to FTP and USB?
-                       vessel,
-                       leg, 
+                       metadata,
                        haul_number,
                        file_type = c("tablet", "archive", "db"), # "tablet" includes error reports, "archive" goes straight from queue not clean (must be used before archive files are moved)
-                       # path, # overall root path, can have in/clean_dir specified here...
                        destination = c("ftp", "backup")){
+  
+  # Unpack metadata
+    vessel <- metadata$vessel
+    leg <- metadata$leg
+    recorder <- metadata$recorder
+  
+  
+  # Create haul ID for output file naming
+    haul_id <- str_remove(haul_number, "^0+")
+  
   
   # Set source directories
     path <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop"), winslash = "/")
@@ -88,16 +125,10 @@ copy_files <- function(files, # specify exactly which files we're applying this 
   # Set destination path
     if(destination == "ftp"){
       # Set base path
-        dest_path <- paste0(path, "/to_FTP/") 
+        dest_path <- paste0(path, "/FTP Queue/") 
         
       # Create 'Data Files from Tablet' subfolder if doesn't already exist
         dir.create(file.path(dest_path, "/Data Files from Tablet/"), recursive = TRUE, showWarnings = FALSE)
-        
-      # # Create vessel and leg subfolders if don't already exist 
-      #   dir.create(file.path(dest_path, vessel, leg), recursive = TRUE, showWarnings = FALSE)
-      # 
-      # # Update with full path
-      #   dest_path <- paste0(dest_path, vessel, "/", leg, "/") 
     }
     
     if(destination == "backup"){
@@ -128,13 +159,10 @@ copy_files <- function(files, # specify exactly which files we're applying this 
                 if(destination == "ftp"){
                   dir.create(file.path(dest_path, "Data Files From Tablet/", folders[i]), recursive = TRUE, showWarnings = FALSE)
                 }
-              
-              # # Set pattern
-              #   pattern <- haul_number
                 
               # Copy files
-                copy <- list.files(paste0(clean_dir, folders[i]), pattern = haul_number) %>%
-                        map(~file.copy(from = paste0(clean_dir, folders[i], .x),
+                copy <- list.files(paste0(clean_dir, "Data Files From Tablet/", folders[i]), pattern = haul_number) %>%
+                        map(~file.copy(from = paste0(clean_dir, "Data Files From Tablet/", folders[i], .x),
                                        to = paste0(dest_path, "Data Files From Tablet/", folders[i], .x),
                                        overwrite = TRUE))
             } 
@@ -146,26 +174,12 @@ copy_files <- function(files, # specify exactly which files we're applying this 
                   dir.create(file.path(dest_path, folders[i]), recursive = TRUE, showWarnings = FALSE)
                 }
               
-              # # Set pattern
-              #   pattern <- paste0(vessel, "_", leg, "_Haul", haul_id)
-                
               # Copy files
                 copy <- list.files(paste0(clean_dir, folders[i]), pattern = paste0(vessel, "_", leg, "_Haul", haul_id)) %>%
                         map(~file.copy(from = paste0(clean_dir, folders[i], .x),
                                        to = paste0(dest_path, folders[i], .x),
                                        overwrite = TRUE))
-            } 
-            
-          # # Create subfolders if don't already exist, set destination directory based on which  
-          #   if(destination == "ftp"){
-          #       dir.create(file.path(dest_path, folders[i]), recursive = TRUE, showWarnings = FALSE)
-          #   }
-          #
-          # # Copy files
-          #   copy <- list.files(paste0(clean_dir, folders[i]), pattern = pattern) %>%
-          #           map(~file.copy(from = paste0(clean_dir, folders[i], .x),
-          #                          to = paste0(dest_path, folders[i], .x),
-          #                          overwrite = TRUE))
+             } 
           }
        }
     }
@@ -178,7 +192,7 @@ copy_files <- function(files, # specify exactly which files we're applying this 
         dir.create(file.path(dest_path, "Data Files from Tablet/Archive/"), recursive = TRUE, showWarnings = FALSE)
       
       # Set directories
-        in_dir <- paste0(path, "/QAQC_queue/")
+        in_dir <- paste0(path, "/QAQC Queue/")
         dest_path <- paste0(dest_path, "Data Files from Tablet/Archive/")
       
       # Set destination subfolders
@@ -219,12 +233,23 @@ copy_files <- function(files, # specify exactly which files we're applying this 
 }
 
 
-  
+
+# Function: compile_db_files ---------------------------------------------------
+#
+# Purpose: 
+#
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
+
 # compile_db_files() 
 #**MAKE a pre-check to make sure there are no duplicate files in the clean!!*
 # - only check duplicate timestamps for haul/tablet, might have 2 tablets for a haul still...
-compile_db_files <- function(vessel,
-                             leg){
+compile_db_files <- function(metadata){
+  
+  
+  # Unpack metadata
+    vessel <- metadata$vessel
+    leg <- metadata$leg
+    recorder <- metadata$recorder
   
   
   # Set directory to source clean files from
@@ -264,16 +289,12 @@ compile_db_files <- function(vessel,
     
     
   # Copy the db files to the FTP queue and the USB backup
-    copyFTP <- copy_files(vessel = vessel,
-                          leg = leg, 
+    copyFTP <- copy_files(metadata = metadata, 
                           file_type = "db", 
-                          # path = path, 
                           destination = "ftp")
     
-    copyUSB <- copy_files(vessel = vessel,
-                          leg = leg, 
+    copyUSB <- copy_files(metadata = metadata, 
                           file_type = "db", 
-                          # path = path, 
                           destination = "backup")
     
     
