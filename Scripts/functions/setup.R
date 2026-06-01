@@ -1,4 +1,10 @@
-# Setup
+
+# Setup Script -----------------------------------------------------------------
+#
+# Purpose: A source script for setting libraries and loading function scripts
+#          for use in the QAQC workflow.
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
+
 
 # Start from scratch each time you run
   rm(list = ls())
@@ -6,10 +12,11 @@
 # Load libraries
   libraries <- list("tidyverse",
                     "purrr",
-                    "cli", # for colored text and pluralization
-                    "stringi", # read .txt files
-                    "data.table", # read .txt files?
-                    "rlist") # append to list
+                    "cli")#, # for colored text and pluralization
+                    # "stringi", # read .txt files
+                    # "data.table", # read .txt files?
+                    # "rlist") # append to list?
+  
   suppressMessages(suppressWarnings(invisible(lapply(libraries, library, character.only = TRUE))))
   
   
@@ -28,11 +35,14 @@
   source(paste0(scripts_dir, "file_checks_global.R"))
   source(paste0(scripts_dir, "id_zero_catch.R"))
   source(paste0(scripts_dir, "file_checks_haul.R"))
-  # source(paste0(scripts_dir, "specimen_checks.R"))
-  # source(paste0(scripts_dir, "final_haul_checks.R"))
-  # source(paste0(scripts_dir, "haul_checks.R"))
+  source(paste0(scripts_dir, "specimen_checks.R"))
+  source(paste0(scripts_dir, "final_haul_checks.R"))
+  source(paste0(scripts_dir, "haul_checks.R"))
   
   
 # Print confirmation message
   cat("\nLibraries and source functions have been successfully loaded.\n\n")
   
+
+# Clean up
+  rm(libraries, scripts_dir)
