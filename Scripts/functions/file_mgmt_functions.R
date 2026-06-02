@@ -250,7 +250,7 @@ compile_db_files <- function(metadata){
     vessel <- metadata$vessel
     leg <- metadata$leg
     recorder <- metadata$recorder
-  
+    
   
   # Set directory to source clean files from
     # path <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop"), winslash = "/")
@@ -285,17 +285,19 @@ compile_db_files <- function(metadata){
                 #**.^^ DO WE WANT THIS AUTOMATICALLY COMBINED HERE? ^^.* Would have to drop the HAUL_ID, RECORDING_DEVICE, and ID columns...
     
   # Print message confirming db files have been updated
-    cat("The 'CATCH_db.csv' and 'SPECIMEN_db.csv' files have been successfully updated in the ", vessel, " ", leg, " folder with all available data for cleaned hauls.\n", sep = "")
+    cat("\nThe 'CATCH_db.csv' and 'SPECIMEN_db.csv' files have been successfully updated in the ", vessel, " ", leg, " folder with all available data for cleaned hauls.\n", sep = "")
     
     
   # Copy the db files to the FTP queue and the USB backup
     copyFTP <- copy_files(metadata = metadata, 
                           file_type = "db", 
-                          destination = "ftp")
+                          destination = "ftp",
+                          haul_number = NULL)
     
     copyUSB <- copy_files(metadata = metadata, 
                           file_type = "db", 
-                          destination = "backup")
+                          destination = "backup",
+                          haul_number = NULL)
     
     
   # Print message confirming db files have been copied to the FTP queue and the USB backup
