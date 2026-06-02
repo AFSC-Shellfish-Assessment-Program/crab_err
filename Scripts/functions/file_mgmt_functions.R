@@ -132,8 +132,8 @@ copy_files <- function(files, # specify exactly which files we're applying this 
     }
     
     if(destination == "backup"){
-      # dest_path <- paste0("D:/", leg, " - both boats/") 
-      dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/") 
+      dest_path <- paste0("D:/", leg, " - both boats/") 
+      # dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/") 
     }
     
     
