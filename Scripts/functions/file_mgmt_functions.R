@@ -48,7 +48,15 @@ move_files <- function(files, # feed function a list of files (either ALL files 
     in_dir <- paste0(path, "/QAQC Queue/")
     
     if(destination == "clean"){
-      clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/Data Files from Tablet/")
+      if(file_type == "tablet"){
+        clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/Data Files from Tablet/")
+      }
+      
+      if(file_type == "error_report"){
+        clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/")
+      }
+      
+
     }
 
     if(destination == "archive"){
@@ -78,7 +86,7 @@ move_files <- function(files, # feed function a list of files (either ALL files 
   # Move report files
     if(file_type == "error_report"){
       # Move Error Report file
-        report <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id)) %>% 
+        report <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_number)) %>% 
                   map(~file.rename(from = paste0(path, "/Temporary Error Reports/", .x),
                                    to = paste0(clean_dir, "Error Reports/", .x)))
     } # end report section
@@ -132,8 +140,8 @@ copy_files <- function(files, # specify exactly which files we're applying this 
     }
     
     if(destination == "backup"){
-      dest_path <- paste0("D:/", leg, " - both boats/") 
-      # dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/") 
+      dest_path <- paste0("D:/", leg, " - both boats/")
+      # dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/")
     }
     
     
