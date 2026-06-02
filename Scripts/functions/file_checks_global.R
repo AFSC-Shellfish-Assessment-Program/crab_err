@@ -33,7 +33,8 @@ file_checks_global <- function(path){
     if(length(haul_queue) == 0){
         cat(col_red("\nNo hauls were identified in the QAQC Queue. Please go back and make sure the tablet files are in the appropriate folder.\n"))
     } else{
-        cat(paste0("\nThe following ", length(haul_queue), " hauls are present in the QAQC Queue:\n"))
+        cat(pluralize("\nThe following {length(haul_queue)} haul{?s} {?is/are} present in the QAQC Queue:"))
+        cat("\n")
         for(n in 1:length(haul_queue)){
             cat(paste0("   - Haul ", haul_queue[n], "\n"))
         }

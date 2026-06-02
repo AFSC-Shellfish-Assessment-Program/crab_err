@@ -30,7 +30,7 @@ final_haul_checks <- function(haul_number,
     
   
   # Print messages
-    cat("\nSpecimen checks for Haul ", haul_id, " have been completed.", sep = "")
+    cat("\nSpecimen checks for Haul ", haul_id, " have been completed.\n", sep = "")
   
     if(nrow(errors) == 0){
       cat("\nNo errors or flags were found for Haul ", haul_id, ".\n\n", sep = "")
