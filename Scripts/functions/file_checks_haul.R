@@ -73,6 +73,7 @@ file_checks_haul <- function(haul_info_all,
       
       no_catch <- id_zero_catch(files = files, 
                                 errors = errors,
+                                error_report = error_report, 
                                 metadata = metadata,
                                 haul_number = haul_number,
                                 final_haul = final_haul)  
@@ -353,6 +354,7 @@ file_checks_haul <- function(haul_info_all,
               to_archive <- move_files(files = to_archive,
                                        metadata = metadata, 
                                        haul_number = haul_number,
+                                       file_type = "tablet",
                                        destination = "archive")
             
             
