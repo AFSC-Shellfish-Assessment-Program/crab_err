@@ -27,8 +27,6 @@ specimen_checks <- function(files_all,
                             haul_number,
                             errors){
   
-  # cat("\nStarting specimen checks.\n")
-  
   # Set file directory
     in_dir <- normalizePath(path = file.path(Sys.getenv("USERPROFILE"), "Desktop/QAQC Queue"), winslash = "/")
   
@@ -387,76 +385,74 @@ specimen_checks <- function(files_all,
   # - flag dead eggs...assuming they were all dead, but if not, please fix and put in the clutch code for the live portion of eggs
     
     
-    # 8) Any egg, egg condition, or clutch size codes assigned to males? or herm??
-    if(TRUE %in% (unique((specimen_table$SEX == 1 & is.na(specimen_table$EGG_COLOR | specimen_table$EGG_CONDITION |
-                                                          specimen_table$CLUTCH_SIZE) == FALSE))) == TRUE){
-      print("ERROR: egg, egg condition, or clutch size code assigned to male")
-    }
-    
-    
-    # 9) Any questionable egg condition x shell condition combinations for females?"
-    # Checking shell condition = 0 and egg condition = 1
-    if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 0 &
-                         filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
-      print("ERROR: female with shell condition = 0 and egg condition = 1")
-    }
-    
-    # Checking shell condition = 1 and egg condition >1
-    if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
-                         filter(specimen_table, SEX != 1)$EGG_CONDITION > 1)) == TRUE){
-      print("ERROR: female with shell condition = 1 and egg condition >1")
-    }
-    
-    # Checking shell condition = 3, 4, or 5 and egg condition = 1
-    if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION %in% c(3:5) &
-                         filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
-      print("ERROR: female with shell condition 3:5 and egg condition = 1")
-    }
-    
-    # Checking shell condition = 1 and egg condition >=2
-    if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
-                         filter(specimen_table, SEX != 1)$EGG_CONDITION >= 2)) == TRUE){
-      print("ERROR: female with shell condition = 1 and egg condition >=2")
-    }
-    
-    
-    # 10) Any females without egg color, egg condition, or clutch codes?
-    if(TRUE %in% (unique(specimen_table$SEX == 2 & (is.na(specimen_table$EGG_COLOR | specimen_table$EGG_CONDITION
-                                                          | specimen_table$CLUTCH_SIZE) == TRUE))) == TRUE){
-      print("ERROR: female missing egg color, egg condition, or clutch code")
-    }
+    # # 8) Any egg, egg condition, or clutch size codes assigned to males? or herm??
+    # if(TRUE %in% (unique((specimen_table$SEX == 1 & is.na(specimen_table$EGG_COLOR | specimen_table$EGG_CONDITION |
+    #                                                       specimen_table$CLUTCH_SIZE) == FALSE))) == TRUE){
+    #   print("ERROR: egg, egg condition, or clutch size code assigned to male")
+    # }
+    # 
+    # 
+    # # 9) Any questionable egg condition x shell condition combinations for females?"
+    # # Checking shell condition = 0 and egg condition = 1
+    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 0 &
+    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
+    #   print("ERROR: female with shell condition = 0 and egg condition = 1")
+    # }
+    # 
+    # # Checking shell condition = 1 and egg condition >1
+    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
+    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION > 1)) == TRUE){
+    #   print("ERROR: female with shell condition = 1 and egg condition >1")
+    # }
+    # 
+    # # Checking shell condition = 3, 4, or 5 and egg condition = 1
+    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION %in% c(3:5) &
+    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
+    #   print("ERROR: female with shell condition 3:5 and egg condition = 1")
+    # }
+    # 
+    # # Checking shell condition = 1 and egg condition >=2
+    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
+    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION >= 2)) == TRUE){
+    #   print("ERROR: female with shell condition = 1 and egg condition >=2")
+    # }
+    # 
+    # 
+    # # 10) Any females without egg color, egg condition, or clutch codes?
+    # if(TRUE %in% (unique(specimen_table$SEX == 2 & (is.na(specimen_table$EGG_COLOR | specimen_table$EGG_CONDITION
+    #                                                       | specimen_table$CLUTCH_SIZE) == TRUE))) == TRUE){
+    #   print("ERROR: female missing egg color, egg condition, or clutch code")
+    # }
     
     
     
     
   # SIZE ----
-    print("CHECKING CRAB SIZES...")
 
-
-    ##**need to incorporate crab species into this!!*
-    # 11) Any missing lengths for RKC?"
-    if(unique(is.na(specimen_table$LENGTH)) == TRUE){
-      print("ERROR: missing length for RKC")
-    }
-    
-    ##**need to incorporate crab species into this!!*
-    # 14) Any widths entered for RKC?
-    if(unique(is.na(specimen_table$WIDTH)) == FALSE) {
-      print("ERROR: width entered for RKC when length is needed")
-    }
-
-
-    # 12) Any small female crab with a clutch size?"
-    if(unique(filter(specimen_table, SEX != 1)$LENGTH < 65 &
-              filter(specimen_table, SEX != 1)$CLUTCH_SIZE > 0) == TRUE){
-      print("ERROR: female <65 with clutch size >0")
-    }
-
-
-    # 13) Any small crab with old shell condition?"
-    if(TRUE %in% unique(specimen_table$LENGTH < 60 & specimen_table$SHELL_CONDITION > 2)){
-      print("ERROR: crab < 60 with shell condition >2")
-    }
+    # ##**need to incorporate crab species into this!!*
+    # # 11) Any missing lengths for RKC?"
+    # if(unique(is.na(specimen_table$LENGTH)) == TRUE){
+    #   print("ERROR: missing length for RKC")
+    # }
+    # 
+    # ##**need to incorporate crab species into this!!*
+    # # 14) Any widths entered for RKC?
+    # if(unique(is.na(specimen_table$WIDTH)) == FALSE) {
+    #   print("ERROR: width entered for RKC when length is needed")
+    # }
+    # 
+    # 
+    # # 12) Any small female crab with a clutch size?"
+    # if(unique(filter(specimen_table, SEX != 1)$LENGTH < 65 &
+    #           filter(specimen_table, SEX != 1)$CLUTCH_SIZE > 0) == TRUE){
+    #   print("ERROR: female <65 with clutch size >0")
+    # }
+    # 
+    # 
+    # # 13) Any small crab with old shell condition?"
+    # if(TRUE %in% unique(specimen_table$LENGTH < 60 & specimen_table$SHELL_CONDITION > 2)){
+    #   print("ERROR: crab < 60 with shell condition >2")
+    # }
 
 
 
