@@ -183,7 +183,7 @@ copy_files <- function(files, # specify exactly which files we're applying this 
                 }
               
               # Copy files
-                copy <- list.files(paste0(clean_dir, folders[i]), pattern = paste0(vessel, "_", leg, "_Haul", haul_id)) %>%
+                copy <- list.files(paste0(clean_dir, folders[i]), pattern = paste0(vessel, "_", leg, "_Haul", haul_number)) %>%
                         map(~file.copy(from = paste0(clean_dir, folders[i], .x),
                                        to = paste0(dest_path, folders[i], .x),
                                        overwrite = TRUE))
