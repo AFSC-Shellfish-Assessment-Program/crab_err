@@ -22,7 +22,11 @@ report_save <- function(metadata,
     check_inputs(metadata,
                  message = FALSE)
   
-  
+    
+  # Create haul ID for output file naming
+    haul_id <- str_remove(haul_number, "^0+")
+    
+    
   # # Check that the argument `type` is one of the correct options,
   # # and only has one input of the correct type.
   #   types <-  c("temporary", "final")
@@ -88,7 +92,7 @@ report_save <- function(metadata,
 
    
   # Save report  
-    write.csv(report_out, paste0(path, "/Temporary Error Reports/", vessel, "_", leg, "_Haul", haul_id, "_report.csv"), row.names = FALSE)
+    write.csv(report_out, paste0(path, "/Temporary Error Reports/", vessel, "_", leg, "_Haul", haul_number, "_report.csv"), row.names = FALSE)
 }
 
 
@@ -121,8 +125,8 @@ report_check <- function(metadata,
     
   
   # Read in existing report file (if any)
-    report_file_temp <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
-    report_file_clean <- list.files(paste0(clean_dir, "Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_id))
+    report_file_temp <- list.files(paste0(path, "/Temporary Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_number))
+    report_file_clean <- list.files(paste0(clean_dir, "Error Reports/"), pattern = paste0(vessel, "_", leg, "_Haul", haul_number))
     
     
   # Check if there's a report in the clean --> throw error if so
@@ -146,10 +150,10 @@ report_check <- function(metadata,
     if(length(report_file_temp) == 1 & length(report_file_clean) == 0){
       
       # Read in existing error report file
-        report <- read.delim(paste0(clean_dir, "Error Reports/", report_file)) 
+        report <- read.csv(paste0(path, "/Temporary Error Reports/", report_file_temp)) 
       
       # Set metadata for error report
-        report_date <- Sys.Date()
+        report_date <- format(Sys.Date(), "%m/%d/%Y")
         report_time <- format(Sys.time(), "%T")
         recheck <- TRUE
       
@@ -169,7 +173,7 @@ report_check <- function(metadata,
     if((length(report_file_temp) & length(report_file_clean)) == 0){
       
       # Set metadata for error report
-        report_date <- Sys.Date()
+        report_date <- format(Sys.Date(), "%m/%d/%Y")
         report_time <- format(Sys.time(), "%T")
         recheck <- FALSE
     
@@ -191,9 +195,6 @@ report_check <- function(metadata,
         cat(col_red("      (3) Delete the extra file(s), and try again.\n\n"))
         cat(rep("-", getOption("width")), sep = "")
         cat("\n\n\n\n\n\n")
-        
-        
-      #**do I want to provide an option to move on to the next haul in the meantime??*
         
         out <- "break"
         return(out)
