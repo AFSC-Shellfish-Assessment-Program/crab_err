@@ -38,15 +38,6 @@ haul_checks <- function(metadata,
         error_report <- report_check(metadata = metadata,
                                      haul_number = haul_number)
         
-      # If report_check returns a list, propagate that through
-        #**maybe don't have to unpack this?? can feed to the report_save function as a bundle??*
-        # if(is.list(error_report)){
-        #   report <- error_report$report
-        #   report_date <- error_report$report_date
-        #   report_time <- error_report$report_time
-        #   recheck <- error_report$recheck
-        # }
-        
       # If haul_checks returns a character, set 'break' for the haul loop
         if(is.character(error_report)){
           if(error_report == "break"){
@@ -81,7 +72,6 @@ haul_checks <- function(metadata,
         if(is.list(file_checks)){
           errors <- file_checks$errors
           files_all <- file_checks$files_all
-          # haul_info_all <- file_checks$haul_info_all
           haul_info <- file_checks$haul_info
         }
       
@@ -119,6 +109,7 @@ haul_checks <- function(metadata,
       #*Do not add notes to error report once in "clean" or else will not get backed up/FTPd
         final_checks <- final_haul_checks(haul_number = haul_number,
                                           errors = errors,
+                                          error_report = error_report,
                                           final_haul = final_haul,
                                           metadata = metadata)
         
