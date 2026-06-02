@@ -56,7 +56,8 @@ specimen_checks <- function(files_all,
 
     
     raw_specimen <- list.files(in_dir, pattern = paste0(haul_number, "_SPECIMEN_0")) %>%
-                    map_df(~suppressWarnings(read.csv(paste0(in_dir, "/", .x))))
+                    map_df(~suppressWarnings(read.csv(paste0(in_dir, "/", .x)))) %>%
+                    select(-RECORDER)
     
     raw_sample <- list.files(in_dir, pattern = paste0(haul_number, "_SAMPLE_0")) %>%
                   map_df(~suppressWarnings(read.csv(paste0(in_dir, "/", .x)))) %>%
@@ -65,7 +66,7 @@ specimen_checks <- function(files_all,
   
   # Join specimen file with raw_specimen to get SPECIMEN_ID, SAMPLE_MODIFIER, RECORD_TIMESTAMP
     specimen_table <- left_join(raw_specimen, raw_sample, 
-                                by = join_by(HAUL_ID, CATCH_SAMPLE_ID, SPECIES_CODE, RECORDING_DEVICE, RECORDER, DATABASE_STATUS)) %>%
+                                by = join_by(HAUL_ID, CATCH_SAMPLE_ID, SPECIES_CODE, RECORDING_DEVICE, DATABASE_STATUS)) %>%
                       right_join(specimen, ., by = join_by(SPECIES_CODE, SEX, RECORDING_DEVICE, SPECIMEN_ID))
   
   
