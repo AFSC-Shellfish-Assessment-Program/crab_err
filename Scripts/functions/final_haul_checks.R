@@ -11,6 +11,7 @@
 
 final_haul_checks <- function(haul_number,
                               errors,
+                              error_report,
                               final_haul,
                               metadata){
 
