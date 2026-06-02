@@ -12,10 +12,10 @@
 # Load libraries
   libraries <- list("tidyverse",
                     "purrr",
-                    "cli")#, # for colored text and pluralization
+                    "cli", # for colored text and pluralization
                     # "stringi", # read .txt files
                     # "data.table", # read .txt files?
-                    # "rlist") # append to list?
+                    "rlist") # append to list?
   
   suppressMessages(suppressWarnings(invisible(lapply(libraries, library, character.only = TRUE))))
   
