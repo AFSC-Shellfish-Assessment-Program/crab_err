@@ -4,86 +4,36 @@
 # USER NOTES:
 #   - Always run from Step 1 to make sure everything is loaded properly
 #   - Please don't rename or move folders!
-#   - 
-#   - Let Shannon know if you come across any unknown errors or illogical options/pathways!
+#   - ...
+#   - Let Shannon know if you come across any unknown errors or illogical options/pathways
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
 
-#**- when extracting files, do they all have the *exact* same timestamp, or can they vary???
-#    - need to check this when running through all hauls as a test!
-#    - also need to BOLD in protocol to please re-extract ALL files if making changes....
-#
-#**Write up a step-by-step narrative in code comments!*
-#*also set up/push the .Rproj so it opens the right stuff for everyone??
-# and have a copy of the protocol in the repo readme
-#
-#**Compare total catch vs. estimated weights by species...?*
-#* would need to do something with joining the raw files to get the subsample groups/weights
-#* with specimens -- can expand weights from there and ID lg in "small" etc.
-
-
-
-
 # Step 1. Source overall workflow setup script.
-
   source("./Scripts/functions/setup.R")
 
-
 # Step 2. Set vessel, leg, and person running the error checks.
-##        Please only use the following exact inputs:
-##           - vessel: "AKK", "NWEx"
-##           - leg: "Leg1", "Leg2, "Leg3", "Leg4"
-
-  metadata <- list(vessel = "AKK",  
-                   leg = "Leg1", 
+##        Please only use the exact 'vessel' and 'leg' inputs shown commented on the lines
+  metadata <- list(vessel = "AKK",    # "AKK", "NWEx"
+                   leg = "Leg1",      # "Leg1", "Leg2, "Leg3", "Leg4"
                    recorder = "Shannon Hennessey")
-
 
 # Step 3. Check inputs to ensure subsequent functions will run smoothly.
 ##        Look for the message 'Key inputs have been validated.' before proceeding. 
-  
   check_inputs(metadata = metadata,
                message = TRUE)
   
-  
-# Step 4. Run global file checks on all hauls in the QAQC Queue. 
-##        This will confirm which hauls are present in the queue. 
-  
+# Step 4. Check the QAQC Queue to confirm which hauls are present in the queue. 
   haul_info_all <- file_checks_global(queue_dir)
   
-
 # Step 5. Run haul-specific checks. 
-##        For each haul in the queue, these checks will:
-##           - Validate vessel, cruise, and station ID entries
-##           - ID potential 0-catch stations
-##           - Inventory files to check for multiple copies and to make sure all tablet files are present
-##           - Run Catch and Specimen checks
-##           - Have the user review and validate any errors or flags
-##           - Write temporary or final Error Reports
-##           - Provide options for moving and copying files to 'Clean', 'FTP Queue' and USB Backup folders 
-##             for clean hauls, or to 'Archive' folders for hauls that require corrections  
-
   haul_qaqc <- haul_checks(metadata,
                            haul_info_all = haul_info_all)
   
-
 # Step 6. Compile Catch and Specimen databases.
 ##        Once the haul(s) in the QAQC Queue have been checked and corrected  
 ##        or annotated (if necessary), compile and back up the most up-to-date 
 ##        versions of the Catch and Specimen db files.
-#
-#**ONLY* from the "clean" folder (by leg)
-# - should I have a pre-check to make sure there are no duplicate files in the clean??
-#   - only check duplicate timestamps for haul/tablet, might have 2 tablets for a haul still...
-#*this function also automatically has lines to copy db to FTP and backup USB
-
   compile_db <- compile_db_files(metadata)
-  
-  
 
-# Quick tool to visualize chela measurements taken or anything else???
-  
-  
-# Extra line/function to run to move a specific haul to clean/backup??
-  
   
   
