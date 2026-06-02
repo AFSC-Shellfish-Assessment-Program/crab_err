@@ -40,6 +40,16 @@
   source(paste0(scripts_dir, "haul_checks.R"))
   
   
+# Load SPECIES lookup table
+  species_lookup <- tibble(SPECIES_CODE = c(68560, 68580, 68590, 69322, 69323,
+                                            69400, 69310, 68550, 68541),
+                           SPECIES_NAME = c("Tanner Crab", "Snow Crab", "Hybrid Crab",
+                                            "Red King Crab", "Blue King Crab", "Horsehair Crab",
+                                            "Golden King Crab", "Grooved Tanner Crab", "Chinocetes Mix"),
+                           SPECIES = c("TANNER", "SNOW", "HYBRID", "RKC", "BKC",
+                                       "HAIR", "GKC", "GROOVED", "CMIX"))
+  
+  
 # Print confirmation message
   cat("\nLibraries and source functions have been successfully loaded.\n\n")
   
