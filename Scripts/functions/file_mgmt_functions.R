@@ -48,7 +48,7 @@ move_files <- function(files, # feed function a list of files (either ALL files 
     in_dir <- paste0(path, "/QAQC Queue/")
     
     if(destination == "clean"){
-      clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/")
+      clean_dir <- paste0("C:/EBS Shelf 2026/Database and Data/", vessel, "/", leg, "/Data Files from Tablet/")
     }
 
     if(destination == "archive"){
@@ -60,18 +60,18 @@ move_files <- function(files, # feed function a list of files (either ALL files 
     if(file_type == "tablet"){
       # Move CRAB_CATCH files
         catch <- files[grepl(paste0("_CRAB_CATCH_", haul_number), files)] %>%
-                map(~file.rename(from = paste0(in_dir, .x),
-                                 to = paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/", .x)))
+                 map(~file.rename(from = paste0(in_dir, .x),
+                                  to = paste0(clean_dir, "Crab CATCH Files/", .x)))
       
       # Move CRAB_SPECIMEN files
         specimen <- files[grepl(paste0("_CRAB_SPECIMEN_", haul_number), files)] %>%
                     map(~file.rename(from = paste0(in_dir, .x),
-                                     to = paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/", .x)))
+                                     to = paste0(clean_dir, "Crab SPECIMEN Files/", .x)))
       
       # Move RAW files
         raw <- files[grepl(paste0("_HAUL", haul_number), files)] %>%
                map(~file.rename(from = paste0(in_dir, .x),
-                                to = paste0(clean_dir, "Data Files from Tablet/RAW Haul Files/", .x)))
+                                to = paste0(clean_dir, "RAW Haul Files/", .x)))
     } # end tablet section
     
     
