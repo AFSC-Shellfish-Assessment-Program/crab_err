@@ -75,7 +75,7 @@ id_zero_catch <- function(files,
                               destination = "backup")
       
       # Print messages
-        cat("Saving Haul ", haul_id, " final Error Report and moving files to the ", vessel, " ", leg, " 'Clean' folders.\n", sep = "")
+        cat("\nSaving Haul ", haul_id, " final Error Report and moving files to the ", vessel, " ", leg, " 'Clean' folders.\n", sep = "")
         cat("Copying Haul ", haul_id, " files to the FTP Queue and USB Backup.\n\n", sep = "")
       
           
