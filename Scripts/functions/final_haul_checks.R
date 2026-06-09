@@ -46,17 +46,18 @@ final_haul_checks <- function(haul_number,
     cat("   - If corrections for Haul ", haul_id, " are needed, or flags need to be annotated in the temporary Error Report, please select 'No'.\n\n", sep = "")
     
     
+  # Save error report
+    report_save(metadata, 
+                haul_number = haul_number,
+                errors = errors,
+                error_report = error_report)
+    
+    
   # Option: is the haul clean?  
     ok_selection <- menu(c("Yes", "No"), title = paste0("Is Haul ", haul_id, " clean and ready to be moved out of the 'QAQC Queue' folder?"))
     
   # YES, clean
     if(ok_selection == 1){
-    
-      # Save error report
-        report_save(metadata, 
-                    haul_number = haul_number,
-                    errors = errors,
-                    error_report = error_report)
       
       # Move Tablet Files
         files_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
@@ -152,13 +153,6 @@ final_haul_checks <- function(haul_number,
    
   # NO, not clean 
     if(ok_selection == 2){
-      
-      # Save error report
-        report_save(metadata, 
-                    haul_number = haul_number,
-                    errors = errors,
-                    error_report = error_report)
-      
       
       # Print messages
         cat(col_red("\nYou selected 'No'.\n"))
@@ -322,12 +316,6 @@ final_haul_checks <- function(haul_number,
             
           # YES, clean
             if(ok_selection == 1){
-
-              # Save error report
-                report_save(metadata, 
-                            haul_number = haul_number,
-                            errors = errors,
-                            error_report = error_report)
               
               # Move Tablet Files
                 files_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
