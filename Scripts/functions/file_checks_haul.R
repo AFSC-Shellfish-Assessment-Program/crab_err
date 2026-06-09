@@ -48,7 +48,7 @@ file_checks_haul <- function(haul_info_all,
   # ID any 'NOTES' files
     if(length(list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE)) > 0){
       notes <- list.files(in_dir, pattern = paste0(haul_number, "_NOTES_"), recursive = TRUE) %>%
-               map_df(~read.csv(paste0(in_dir, "/", .x))) %>%
+               map_df(~suppressWarnings(read.csv(paste0(in_dir, "/", .x)))) %>%
                select(HAUL_ID, NOTE_TABLE, NOTES)
     
     # Add any 'NOTES' to Error Report
