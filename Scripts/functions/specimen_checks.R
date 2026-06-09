@@ -5,6 +5,11 @@
 #
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
 
+#**Is there some way I could streamline this??*
+#*Make a list of criteria, metadata, messages and then just loop through for most??
+
+
+
 # For each haul, check specimen entries for incomplete or implausible biometrics
 # Across all specimens:
 # - all specimens have a length/width (and correct measurement type for correct species)
@@ -15,7 +20,7 @@
 # - catch weight vs. estimated weights?
 #   - Need to compile raws to match to subsample (size/sex categories)!!
 # - any specimens above/below 99th %ile size? (or some way to set bounds/ID outliers....)
-# - flag any species never seen at a given station before?? (have to make sure we have "-B" stations defined for modernization hauls...)
+# - flag any species never seen at a given station before?? (have to make sure we have "-B" stations defined/corrected for modernization hauls...)
 
 # For each species:
 # - small mature females (especially mature barren RKC/BKC)
@@ -72,15 +77,36 @@ specimen_checks <- function(files_all,
   
   # Once dataframes are joined, run specimen checks
   
+    
+    
+  # STATION_ID ----
+    
+    # station_check <- specimen_table %>%
+    #                  # remove any corner stations
+    #                  filter(str_detect(STATION, "-")) %>% 
+    #                  select(CRUISE, VESSEL, HAUL, TABLET, STATION) %>%
+    #                  # # remove any 15 minute tows (i.e. X-X-B notation)  
+    #                  # mutate(standard_station = ifelse(str_count(STATION, "-") == 2, F, T)) %>%
+    #                  # filter(standard_station == TRUE) %>%
+    #                  # make sure all stations have leading zeros
+    #                  mutate(STATION_ID = STATION) %>% # make duplicate column to match against
+    #                  (separate(STATION_ID, sep = "-", into = c("col", "row", "mod"))) %>%
+    #                  mutate(row = str_pad(row, width = 2, pad = "0")) %>% # make sure all names have leading zeros
+    #                  unite("STATION_ID", col:row, sep = "-") %>%
+    #                  distinct()
+    
+    
   # CRUISE ----
   #**Will probably need to update this at some point to make more adaptive...*
   #* Maybe something to do with STATION_ID lookup to tell whether it should be EBS or NBS??
   #* Nonstandard stations might make this more tricky though...could add to lookup?
 
-    if(!unique(specimen_table$CRUISE) == "202601"){
+    if(nrow(specimen_table %>% 
+            filter(!CRUISE == "202601")) > 0){
       
       # Create temporary dataframe
         temp <- specimen_table %>% 
+                filter(!CRUISE == "202601") %>%
                 select(CRUISE, TABLET) %>%
                 distinct()
         
@@ -108,7 +134,8 @@ specimen_checks <- function(files_all,
  
   # SPECIES_CODE ----
   # Check regular species
-    if(TRUE %in% (!unique(specimen_table$SPECIES_CODE) %in% species_lookup$SPECIES_CODE)){
+    if(nrow(specimen_table %>% 
+            filter(!SPECIES_CODE %in% species_lookup$SPECIES_CODE)) > 0){
       
       # Create temporary dataframe
         temp <- specimen_table %>% 
@@ -140,52 +167,56 @@ specimen_checks <- function(files_all,
     }
     
     
-    # Check special species
-      if(TRUE %in% (!unique(specimen_table$SPECIES_CODE) %in% species_lookup$SPECIES_CODE[1:6])){
-        
-        # Create temporary dataframe
-          temp <- specimen_table %>% 
-                  filter(!SPECIES_CODE %in% species_lookup$SPECIES_CODE) %>%
-                  group_by(SPECIES_CODE, SPECIES_NAME, TABLET) %>%
-                  summarise(N = n(), .groups = "drop_last")
-        
-        # Print message  
-          cat(col_red(pluralize("There {?is/are} {nrow(temp)} 'SPECIES_CODE' entr{?y/ies} that {?is/are} more uncommon species:\n")))
-        
-        # Loop over combos to ID which catch samples have the issue
-          for(i in 1:nrow(temp)){
-            
-            # Set temporary identifiers
-              temp_tablet <- temp[i,]$TABLET
-              temp_species <- temp[i,]$SPECIES_NAME
-              temp_n <- temp[i,]$N
-              
-            # Add note to Error Report
-              error_iter <- nrow(errors) + 1
-              errors[error_iter, 1] <- "Specimen_ID"
-              errors[error_iter, 2] <- pluralize("{temp_n} entr{?y/ies}: 'SPECIES_NAME' = ", temp_species, " was detected on Tablet '", temp_tablet, "'. Please verify that this species was observed in the haul.")
-      
-            # Print error message
-              cat("\n")
-              cat(col_red(pluralize("- {temp_n} entr{?y/ies} of 'SPECIES_NAME' = ", temp_species, " {?is/are} detected on Tablet '", temp_tablet, "'.\n")), sep = "")
-          }
-          cat("\n")
-      }
+    # # Check special species
+    #   if(nrow(specimen_table %>% 
+    #           filter(!SPECIES_CODE %in% species_lookup$SPECIES_CODE[1:6])) > 0){
+    #     
+    #     # Create temporary dataframe
+    #       temp <- specimen_table %>% 
+    #               filter(!SPECIES_CODE %in% species_lookup$SPECIES_CODE[1:6]) %>%
+    #               group_by(SPECIES_CODE, SPECIES_NAME, TABLET) %>%
+    #               summarise(N = n(), .groups = "drop_last")
+    #     
+    #     # Print message  
+    #       cat(col_red(pluralize("There {?is/are} {nrow(temp)} 'SPECIES_CODE' entr{?y/ies} that {?is/are} more uncommon species:\n")))
+    #     
+    #     # Loop over combos to ID which catch samples have the issue
+    #       for(i in 1:nrow(temp)){
+    #         
+    #         # Set temporary identifiers
+    #           temp_tablet <- temp[i,]$TABLET
+    #           temp_species <- temp[i,]$SPECIES_NAME
+    #           temp_n <- temp[i,]$N
+    #           
+    #         # Add note to Error Report
+    #           error_iter <- nrow(errors) + 1
+    #           errors[error_iter, 1] <- "Specimen_ID"
+    #           errors[error_iter, 2] <- pluralize("{temp_n} entr{?y/ies}: 'SPECIES_NAME' = ", temp_species, " was detected on Tablet '", temp_tablet, "'. Please verify that this species was observed in the haul.")
+    #   
+    #         # Print error message
+    #           cat("\n")
+    #           cat(col_red(pluralize("- {temp_n} entr{?y/ies} of 'SPECIES_NAME' = ", temp_species, " {?is/are} detected on Tablet '", temp_tablet, "'.\n")), sep = "")
+    #       }
+    #       cat("\n")
+    #   }
       
 
 
 
   # SEX ----
   #**DO we want a flag for herm/unsexed just to verify??*
-  #*crabs without SEX?
 
-    if(TRUE %in% (!unique(specimen_table$SEX) %in% c(1:4))){
+  # Check for invalid SEX entries
+    if(nrow(specimen_table %>% 
+            filter(!SEX %in% c(1:4))) > 0){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(!SEX %in% c(1:4)) %>%
-                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER) %>%
-                summarise(N = n(), .groups = "drop_last")
+      temp_spec <- specimen_table %>% 
+                   filter(!SEX %in% c(1:4))
+      
+      temp <- temp_spec %>% 
+              group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER) %>%
+              summarise(N = n(), .groups = "drop_last")
       
       # Print message  
         cat(col_red(pluralize("There {?is/are} {nrow(temp)} invalid entr{?y/ies} for 'SEX':\n")))
@@ -200,10 +231,30 @@ specimen_checks <- function(files_all,
             temp_description <- temp[i,]$SAMPLE_MODIFIER
             temp_sex <- temp[i,]$SEX
           
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'SEX' = ", temp_sex, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     SEX == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'SEX' = ", temp_sex, ".")
+            }
+            
+            
+          # # Add note to Error Report
+          #   error_iter <- nrow(errors) + 1
+          #   errors[error_iter, 1] <- "Specimen"
+          #   errors[error_iter, 2] <- pluralize("{temp_n} invalid 'SEX' = ", temp_sex, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
           
           # Print error message
             cat("\n")
@@ -218,11 +269,14 @@ specimen_checks <- function(files_all,
   # SHELL_CONDITION ----
      
   # Check for invalid shell conditions
-    if(TRUE %in% (!unique(specimen_table$SHELL_CONDITION) %in% c(0:5))){
+    if(nrow(specimen_table %>% 
+            filter(!SHELL_CONDITION %in% c(0:5))) > 0){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(!SHELL_CONDITION %in% c(0:5)) %>%
+        temp_spec <- specimen_table %>% 
+                     filter(!SHELL_CONDITION %in% c(0:5)) 
+        
+        temp <- temp_spec %>% 
                 group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, SHELL_CONDITION) %>%
                 summarise(N = n(), .groups = "drop_last")
       
@@ -242,11 +296,30 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 3 ~ "Unsexed",
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
             temp_sc <- temp[i,]$SHELL_CONDITION
-          
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'SHELL_CONDITION' = ", temp_sc, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+            
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     SHELL_CONDITION == temp_sc,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'SHELL_CONDITION' = ", temp_sc, ".")
+            }
           
           # Print error message
             cat("\n")
@@ -255,18 +328,32 @@ specimen_checks <- function(files_all,
         cat("\n")
     }
 
-
+    
+    # Check for tiny crab with old shell for Chionoecetes crabs
+    # width < 30 and shell_condition > 2
+    #
+    # # 13) Any small crab with old shell condition?"
+    # if(TRUE %in% unique(specimen_table$LENGTH < 60 & specimen_table$SHELL_CONDITION > 2)){
+    #   print("ERROR: crab < 60 with shell condition >2")
+    # }
+    
+    
 
   # EGG_CONDITION ----
   # Check for invalid egg condition
-    if(TRUE %in% (!unique(specimen_table %>% filter(SEX == 2) %>% pull(EGG_CONDITION)) %in% c(0:5))){
+    if(nrow(specimen_table %>% 
+            filter(SEX == 2,
+                   !EGG_CONDITION %in% c(0:5))) > 0){
       
       # Create temporary dataframe
-      temp <- specimen_table %>% 
-              filter(SEX == 2,
-                     !EGG_CONDITION %in% c(0:5)) %>%
-              group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, EGG_CONDITION) %>%
-              summarise(N = n(), .groups = "drop_last")
+        temp_spec <- specimen_table %>% 
+                     filter(SEX == 2,
+                            !EGG_CONDITION %in% c(0:5))
+        
+        temp <- temp_spec %>% 
+                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, EGG_CONDITION) %>%
+                summarise(N = n(), .groups = "drop_last")
+      
       
       # Print message  
         cat(col_red(pluralize("There {?is/are} {nrow(temp)} invalid entr{?y/ies} for 'EGG_CONDITION':\n")))
@@ -284,11 +371,36 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 3 ~ "Unsexed",
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
             temp_ec <- temp[i,]$EGG_CONDITION
-          
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'EGG_CONDITION' = ", temp_ec, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+            
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     EGG_CONDITION == temp_ec,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'EGG_CONDITION' = ", temp_ec, ".")
+            }
+            
+            
+          # # Add note to Error Report
+          #   error_iter <- nrow(errors) + 1
+          #   errors[error_iter, 1] <- "Specimen"
+          #   errors[error_iter, 2] <- pluralize("{temp_n} invalid 'EGG_CONDITION' = ", temp_ec, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
           
           # Print error message
             cat("\n")
@@ -305,9 +417,11 @@ specimen_checks <- function(files_all,
     if(TRUE %in% (!unique(specimen_table %>% filter(SEX == 2) %>% pull(CLUTCH_SIZE)) %in% c(0:6))){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(SEX == 2,
-                       !CLUTCH_SIZE %in% c(0:6)) %>%
+        temp_spec <- specimen_table %>% 
+                     filter(SEX == 2,
+                            !CLUTCH_SIZE %in% c(0:6))
+        
+        temp <- temp_spec %>% 
                 group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, CLUTCH_SIZE) %>%
                 summarise(N = n(), .groups = "drop_last")
       
@@ -328,10 +442,34 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
             temp_clutch <- temp[i,]$CLUTCH_SIZE
           
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'CLUTCH_SIZE' = ", temp_clutch, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     CLUTCH_SIZE == temp_clutch,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'CLUTCH_SIZE' = ", temp_clutch, ".")
+            }
+            
+          # # Add note to Error Report
+          #   error_iter <- nrow(errors) + 1
+          #   errors[error_iter, 1] <- "Specimen"
+          #   errors[error_iter, 2] <- pluralize("{temp_n} invalid 'CLUTCH_SIZE' = ", temp_clutch, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
           
           # Print error message
             cat("\n")
@@ -346,9 +484,11 @@ specimen_checks <- function(files_all,
     if(TRUE %in% (!unique(specimen_table %>% filter(SEX == 2) %>% pull(EGG_COLOR)) %in% c(0, 2:6))){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(SEX == 2,
-                       !EGG_COLOR %in% c(0, 2:6)) %>%
+        temp_spec <- specimen_table %>% 
+                     filter(SEX == 2,
+                            !EGG_COLOR %in% c(0, 2:6))  
+        
+        temp <- temp_spec %>% 
                 group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, EGG_COLOR) %>%
                 summarise(N = n(), .groups = "drop_last")
       
@@ -369,10 +509,34 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
             temp_ec <- temp[i,]$EGG_COLOR
           
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'EGG_COLOR' = ", temp_ec, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     EGG_COLOR == temp_ec,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'EGG_COLOR' = ", temp_ec, ".")
+            }
+            
+          # # Add note to Error Report
+          #   error_iter <- nrow(errors) + 1
+          #   errors[error_iter, 1] <- "Specimen"
+          #   errors[error_iter, 2] <- pluralize("{temp_n} invalid 'EGG_COLOR' = ", temp_ec, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
           
           # Print error message
             cat("\n")
@@ -382,8 +546,24 @@ specimen_checks <- function(files_all,
     }
     
     
+    
+    
   # CLUTCH CODES (combos) ----
+    #**GIVE THIS SPECIMEN_ID*
   # - flag dead eggs...assuming they were all dead, but if not, please fix and put in the clutch code for the live portion of eggs
+    
+  
+     
+    # Check for questionable egg codes for female king crab
+    # shell_condition = 0 and egg_condition = 1
+    # or shell_condition = 1 and egg_condition > 1
+    # or shell_condition in (3,4,5) and egg_condition = 1
+    # or shell_condition = 1 and egg_condition >= 2
+    #
+    # Check for questionable egg codes for Tanner and snow crab
+    # shell_condition = 1 and egg_condition >= 2
+    # or shell_condition = 0 and egg_condition = 1 
+    
     
     
     # # 8) Any egg, egg condition, or clutch size codes assigned to males? or herm??
@@ -391,34 +571,8 @@ specimen_checks <- function(files_all,
     #                                                       specimen_table$CLUTCH_SIZE) == FALSE))) == TRUE){
     #   print("ERROR: egg, egg condition, or clutch size code assigned to male")
     # }
-    # 
-    # 
-    # # 9) Any questionable egg condition x shell condition combinations for females?"
-    # # Checking shell condition = 0 and egg condition = 1
-    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 0 &
-    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
-    #   print("ERROR: female with shell condition = 0 and egg condition = 1")
-    # }
-    # 
-    # # Checking shell condition = 1 and egg condition >1
-    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
-    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION > 1)) == TRUE){
-    #   print("ERROR: female with shell condition = 1 and egg condition >1")
-    # }
-    # 
-    # # Checking shell condition = 3, 4, or 5 and egg condition = 1
-    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION %in% c(3:5) &
-    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION == 1)) == TRUE){
-    #   print("ERROR: female with shell condition 3:5 and egg condition = 1")
-    # }
-    # 
-    # # Checking shell condition = 1 and egg condition >=2
-    # if(TRUE %in% (unique(filter(specimen_table, SEX != 1)$SHELL_CONDITION == 1 &
-    #                      filter(specimen_table, SEX != 1)$EGG_CONDITION >= 2)) == TRUE){
-    #   print("ERROR: female with shell condition = 1 and egg condition >=2")
-    # }
-    # 
-    # 
+
+
     # # 10) Any females without egg color, egg condition, or clutch codes?
     # if(TRUE %in% (unique(specimen_table$SEX == 2 & (is.na(specimen_table$EGG_COLOR | specimen_table$EGG_CONDITION
     #                                                       | specimen_table$CLUTCH_SIZE) == TRUE))) == TRUE){
@@ -426,55 +580,245 @@ specimen_checks <- function(files_all,
     # }
     
     
-    
+  
+      
     
   # SIZE ----
-
+    #**GIVE THIS SPECIMEN_ID*
     # ##**need to incorporate crab species into this!!*
-    # # 11) Any missing lengths for RKC?"
+    # # 11) Any missing sizes?
     # if(unique(is.na(specimen_table$LENGTH)) == TRUE){
     #   print("ERROR: missing length for RKC")
     # }
-    # 
-    # ##**need to incorporate crab species into this!!*
-    # # 14) Any widths entered for RKC?
+
+    # # 14) Any widths entered for KC/lengths for Chiono?
     # if(unique(is.na(specimen_table$WIDTH)) == FALSE) {
     #   print("ERROR: width entered for RKC when length is needed")
     # }
-    # 
-    # 
+
     # # 12) Any small female crab with a clutch size?"
     # if(unique(filter(specimen_table, SEX != 1)$LENGTH < 65 &
     #           filter(specimen_table, SEX != 1)$CLUTCH_SIZE > 0) == TRUE){
     #   print("ERROR: female <65 with clutch size >0")
     # }
-    # 
-    # 
-    # # 13) Any small crab with old shell condition?"
-    # if(TRUE %in% unique(specimen_table$LENGTH < 60 & specimen_table$SHELL_CONDITION > 2)){
-    #   print("ERROR: crab < 60 with shell condition >2")
-    # }
 
 
+    # Check the sizes against the sample descriptor? Eg. 100 CW in a “small” category...or at least check for outliers...
+    
+    
+    # Check for small female crab with a clutch size
+    #**What are the cutoffs for this??*
+    # # RKC < 65, BKC < 65?, Snow/Hybrid..., Tanner...
+    # #**GIVE THIS SPECIMEN_ID*
+    #   if(nrow(specimen_table %>% 
+    #           filter(SPECIES_NAME == "red king crab", 
+    #                  SEX == 2, 
+    #                  EGG_COLOR == 0,
+    #                  EGG_CONDITION == 0,
+    #                  CLUTCH_SIZE == 1,
+    #                  LENGTH < 90))){
+    #     
+    #     # Create temporary dataframe
+    #     temp <- specimen_table %>% 
+    #       filter(SPECIES_NAME == "red king crab", 
+    #              SEX == 2, 
+    #              EGG_COLOR == 0,
+    #              EGG_CONDITION == 0,
+    #              CLUTCH_SIZE == 1,
+    #              LENGTH < 90) 
+    #     
+    #     # Print message  
+    #     cat(col_red(pluralize("There {?is/are} {nrow(temp)} 'mature barren' RKC female{?s} with a 'LENGTH' < 90mm:\n")))
+    #     
+    #     # Loop over combos to ID which specimens have the issue
+    #     for(i in 1:nrow(temp)){
+    #       
+    #       # Set temporary identifiers
+    #       temp_tablet <- temp[i,]$TABLET
+    #       temp_species <- temp[i,]$SPECIES_NAME
+    #       temp_description <- temp[i,]$SAMPLE_MODIFIER
+    #       temp_sex <- case_when(temp[i,]$SEX == 1 ~ "Male",
+    #                             temp[i,]$SEX == 2 ~ "Female",
+    #                             temp[i,]$SEX == 3 ~ "Unsexed",
+    #                             temp[i,]$SEX == 4 ~ "Hermaphrodite")
+    #       temp_length <- temp[i,]$LENGTH
+    #       temp_specimenID <- temp[i,]$SPECIMEN_ID
+    #       
+    #       # Add note to Error Report
+    #       error_iter <- nrow(errors) + 1
+    #       errors[error_iter, 1] <- "Specimen"
+    #       errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as 'mature, no eggs', but has a 'LENGTH' < 90mm. Please verify this entry.")
+    #       
+    #       # Print error message
+    #       cat("\n")
+    #       cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+    #     }
+    #     cat("\n")
+    #   }
+    # 
+    # 
+
+
+    # Check for RKC small "mature barren" females (< 90mm)
+      if(nrow(specimen_table %>% 
+              filter(SPECIES_NAME == "red king crab", 
+                     SEX == 2, 
+                     EGG_COLOR == 0,
+                     EGG_CONDITION == 0,
+                     CLUTCH_SIZE == 1,
+                     LENGTH < 90)) > 0){
+        
+        # Create temporary dataframe
+          temp <- specimen_table %>% 
+                  filter(SPECIES_NAME == "red king crab", 
+                         SEX == 2, 
+                         EGG_COLOR == 0,
+                         EGG_CONDITION == 0,
+                         CLUTCH_SIZE == 1,
+                         LENGTH < 90) 
+        
+        # Print message  
+          cat(col_red(pluralize("There {?is/are} {nrow(temp)} 'mature barren' RKC female{?s} with a 'LENGTH' < 90mm:\n")))
+        
+        # Loop over combos to ID which specimens have the issue
+          for(i in 1:nrow(temp)){
+            
+            # Set temporary identifiers
+              temp_tablet <- temp[i,]$TABLET
+              temp_species <- temp[i,]$SPECIES_NAME
+              temp_description <- temp[i,]$SAMPLE_MODIFIER
+              temp_sex <- case_when(temp[i,]$SEX == 1 ~ "Male",
+                                    temp[i,]$SEX == 2 ~ "Female",
+                                    temp[i,]$SEX == 3 ~ "Unsexed",
+                                    temp[i,]$SEX == 4 ~ "Hermaphrodite")
+              temp_length <- temp[i,]$LENGTH
+              temp_specimenID <- temp[i,]$SPECIMEN_ID
+            
+            # Add note to Error Report
+              error_iter <- nrow(errors) + 1
+              errors[error_iter, 1] <- "Specimen"
+              errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as 'mature, no eggs', but has a 'LENGTH' < 90mm. Please verify this entry.")
+            
+            # Print error message
+              cat("\n")
+              cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+          }
+          cat("\n")
+      }
+    
+    
+    
 
   ## PLOT SIZE/WEIGHT FOR OUTLIERS?? 0 weights?
-  ## flag entries of sizes +_ 2 sd LW regression estimate?
+  ## flag entries of sizes +- 2 sd LW regression estimate?
 
+    
 
+  # CHELA_HEIGHT ----
+    
+    # Check the minimum and maximum chela_height height by species_code
+    # SQL> select species_code, length, width, min(chela_height),max(chela_height)
+    # from &xcrab
+    # where cruise like '&xyear%' and chela_height is not null
+    # group by species_code,length,width
+    # order by species_code,length,width;
 
-
+    
+    
+  # Check CHELA_HEIGHT entries for females
+    if(nrow(specimen_table %>% 
+            filter(!is.na(CHELA_HEIGHT),
+                   !SEX == 1)) > 0){
+      
+      # Create temporary dataframe
+        temp <- specimen_table %>% 
+                filter(!is.na(CHELA_HEIGHT),
+                       !SEX == 1) %>%
+                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
+                summarise(N = n(), .groups = "drop_last")
+      
+      # Print message  
+        cat(col_red(pluralize("There {?is/are} {nrow(temp)} non-male specimen{?s} with 'CHELA_HEIGHT' recorded:\n")))
+      
+      # Loop over combos to ID which catch samples have the issue
+        for(i in 1:nrow(temp)){
+          
+          # Set temporary identifiers
+            temp_n <- temp[i,]$N
+            temp_tablet <- temp[i,]$TABLET
+            temp_species <- temp[i,]$SPECIES_NAME
+            temp_description <- temp[i,]$SAMPLE_MODIFIER
+            temp_sex <- case_when(temp[i,]$SEX == 1 ~ "Male", 
+                                  temp[i,]$SEX == 2 ~ "Female",
+                                  temp[i,]$SEX == 3 ~ "Unsexed",
+                                  temp[i,]$SEX == 4 ~ "Hermaphrodite")
+            temp_specimenID <- temp[i,]$SPECIMEN_ID
+          
+          # Add note to Error Report
+            error_iter <- nrow(errors) + 1
+            errors[error_iter, 1] <- "Specimen"
+            errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has a 'CHELA_HEIGHT' entry.")
+          
+          # Print error message
+            cat("\n")
+            cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+        }
+        cat("\n")
+    }
+    
+    
+    
   # DISEASE_CODE ----
   # - flag for rhizocephalans - assuming this was a rotting clutch, was it actually a rhizocephalan?
-
+    if(4 %in% unique(specimen_table$DISEASE_CODE)){
+      
+      # Create temporary dataframe
+        temp <- specimen_table %>% 
+                filter(DISEASE_CODE == 4) %>%
+                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
+                summarise(N = n(), .groups = "drop_last")
+      
+      # Print message  
+        cat(col_red(pluralize("There {?is/are} {nrow(temp)} specimen{?s} with Rhizocephalan barnacles ('DISEASE_CODE' = 4):\n")))
+      
+      # Loop over combos to ID which catch samples have the issue
+        for(i in 1:nrow(temp)){
+          
+          # Set temporary identifiers
+            temp_n <- temp[i,]$N
+            temp_tablet <- temp[i,]$TABLET
+            temp_species <- temp[i,]$SPECIES_NAME
+            temp_description <- temp[i,]$SAMPLE_MODIFIER
+            temp_sex <- case_when(temp[i,]$SEX == 1 ~ "Male", 
+                                  temp[i,]$SEX == 2 ~ "Female",
+                                  temp[i,]$SEX == 3 ~ "Unsexed",
+                                  temp[i,]$SEX == 4 ~ "Hermaphrodite")
+            temp_specimenID <- temp[i,]$SPECIMEN_ID
+          
+          # Add note to Error Report
+            error_iter <- nrow(errors) + 1
+            errors[error_iter, 1] <- "Specimen"
+            errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as having Rhizocephalan barnacles. Was this a flag for a rotting clutch?")
+          
+          # Print error message
+            cat("\n")
+            cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+        }
+        cat("\n")
+    }
+    
+    
   # Check for invalid disease code
     if(TRUE %in% (!unique(specimen_table$DISEASE_CODE) %in% c(NA, 1:8))){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(!DISEASE_CODE %in% c(NA, 1:8)) %>%
+        temp_spec <- specimen_table %>% 
+                     filter(!DISEASE_CODE %in% c(NA, 1:8))
+        
+        temp <- temp_spec %>% 
                 group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
                 summarise(N = n(), .groups = "drop_last")
-      
+        
       # Print message  
         cat(col_red(pluralize("There {?is/are} {nrow(temp)} invalid entr{?y/ies} for 'DISEASE_CODE':\n")))
       
@@ -492,10 +836,34 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
             temp_disease <- temp[i,]$DISEASE_CODE
           
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("{temp_n} invalid 'DISEASE_CODE' = ", temp_disease, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     DISEASE_CODE == temp_disease,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- paste0("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' has an invalid 'DISEASE_CODE' = ", temp_disease, ".")
+            }
+            
+          # # Add note to Error Report
+          #   error_iter <- nrow(errors) + 1
+          #   errors[error_iter, 1] <- "Specimen"
+          #   errors[error_iter, 2] <- pluralize("{temp_n} invalid 'DISEASE_CODE' = ", temp_disease, " entr{?y/ies} {?is/are} detected for a '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")
           
           # Print error message
             cat("\n")
@@ -506,14 +874,46 @@ specimen_checks <- function(files_all,
     
 
 
-    #**Any bitter crab recorded for RKC?*
-    # if(unique(is.na(specimen_table$DISEASE_CODE) == FALSE & specimen_table$DISEASE_CODE == 2 |
-    #           is.na(specimen_table$DISEASE_CODE) == FALSE & specimen_table$DISEASE_CODE == 2 &
-    #           (is.na(specimen_table$DISEASE_DORSAL) == FALSE &
-    #            is.na(specimen_table$DISEASE_LEGS) == FALSE &
-    #            is.na(specimen_table$DISEASE_VENTRAL) == FALSE)) == TRUE){
-    #   print("ERROR: bitter crab recorded for RKC and/or bitter crab recorded with % coverage")
-    # }
+  # Check for bitter crab recorded for RKC
+    if(nrow(specimen_table %>% 
+            filter(SPECIES_NAME == "red king crab", 
+                   DISEASE_CODE == 2)) > 0){
+      
+      # Create temporary dataframe
+        temp <- specimen_table %>% 
+                filter(SPECIES_NAME == "red king crab",
+                       DISEASE_CODE == 2) %>%
+                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
+                summarise(N = n(), .groups = "drop_last")
+      
+      # Print message  
+        cat(col_red(pluralize("There {?is/are} {nrow(temp)} RKC specimen{?s} with Bitter crab disease ('DISEASE_CODE' = 2) recorded:\n")))
+      
+      # Loop over combos to ID which catch samples have the issue
+        for(i in 1:nrow(temp)){
+          
+          # Set temporary identifiers
+            temp_n <- temp[i,]$N
+            temp_tablet <- temp[i,]$TABLET
+            temp_species <- temp[i,]$SPECIES_NAME
+            temp_description <- temp[i,]$SAMPLE_MODIFIER
+            temp_sex <- case_when(temp[i,]$SEX == 1 ~ "Male", 
+                                  temp[i,]$SEX == 2 ~ "Female",
+                                  temp[i,]$SEX == 3 ~ "Unsexed",
+                                  temp[i,]$SEX == 4 ~ "Hermaphrodite")
+            temp_specimenID <- temp[i,]$SPECIMEN_ID
+          
+          # Add note to Error Report
+            error_iter <- nrow(errors) + 1
+            errors[error_iter, 1] <- "Specimen"
+            errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as having Bitter crab disease.")
+          
+          # Print error message
+            cat("\n")
+            cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+        }
+        cat("\n")
+    }
 
 
 
@@ -575,15 +975,6 @@ specimen_checks <- function(files_all,
   # 
     
   # END ----
-    # cat("\nSpecimen checks have been completed.\n")
-    
     return(list(errors = errors))
   
 }
-
-
-# - Add common name to “_db” files? Would need to have lookup table defined in script or on computers 
-# - Maybe also check the sizes against the sample descriptor? Eg. 100 CW in a “small” category...or at least check for outliers...
-
-
-
