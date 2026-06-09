@@ -37,7 +37,7 @@ final_haul_checks <- function(haul_number,
     }
   
     if(nrow(errors) > 0){
-      cat("\nPrinting error summary for Haul ", haul_id, ".\n\n", sep = "")
+      cat(style_bold("\nPrinting error summary for Haul ", haul_id, ".\n\n", sep = ""))
       print(errors)
     }
   
@@ -153,8 +153,12 @@ final_haul_checks <- function(haul_number,
   # NO, not clean 
     if(ok_selection == 2){
       
-      #**WRITE ERROR REPORT*
-    
+      # Save error report
+        report_save(metadata, 
+                    haul_number = haul_number,
+                    errors = errors,
+                    error_report = error_report)
+      
       
       # Print messages
         cat(col_red("\nYou selected 'No'.\n"))
@@ -186,6 +190,14 @@ final_haul_checks <- function(haul_number,
               # to_archive <- list.files(in_dir, pattern = archive_timestamps, recursive = TRUE) %>% # ok if multiple timestamps, would need to iterate... probs for multiple tablets too?
               #               map(~file.rename(from = paste0(in_dir, .x),
               #                                to = paste0(clean_dir, "_archive/", .x)))
+              # Move Tablet Files
+                files_archive <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
+                to_archive <- move_files(files = files_archive,
+                                         metadata = metadata, 
+                                         haul_number = haul_number,
+                                         file_type = "tablet",
+                                         destination = "archive")
+              
               
               # Print messages
                 cat("\nYou selected 'Yes'.\n")
@@ -310,18 +322,28 @@ final_haul_checks <- function(haul_number,
             
           # YES, clean
             if(ok_selection == 1){
+
+              # Save error report
+                report_save(metadata, 
+                            haul_number = haul_number,
+                            errors = errors,
+                            error_report = error_report)
               
-              #**WRITE ERROR REPORT HERE* TO TEMP, then move to FINAL
-              
-              
-              #**MOVE FILES*
+              # Move Tablet Files
                 files_clean <- list.files(in_dir, pattern = haul_number, recursive = TRUE)
                 to_clean <- move_files(files = files_clean,
-                                       metadata = metadata,  
+                                       metadata = metadata, 
                                        haul_number = haul_number,
+                                       file_type = "tablet",
                                        destination = "clean")
               
-              #**MOVE ERROR REPORT*
+              # Move Error Report
+                final_report <- move_files(files = list.files(paste0(path, "/Temporary Error Reports/"), 
+                                                              pattern = paste0(vessel, "_", leg, "_Haul", haul_id)),
+                                           metadata = metadata, 
+                                           haul_number = haul_number,
+                                           file_type = "error_report",
+                                           destination = "clean")
               
               # Print messages
                 cat("\nYou selected 'Yes'.\n", sep = "")
