@@ -734,7 +734,7 @@ specimen_checks <- function(files_all,
         temp <- specimen_table %>% 
                 filter(!is.na(CHELA_HEIGHT),
                        !SEX == 1) %>%
-                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
+                group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER) %>%
                 summarise(N = n(), .groups = "drop_last")
       
       # Print message  
