@@ -770,7 +770,8 @@ specimen_checks <- function(files_all,
     
   # DISEASE_CODE ----
   # - flag for rhizocephalans - assuming this was a rotting clutch, was it actually a rhizocephalan?
-    if(4 %in% unique(specimen_table$DISEASE_CODE)){
+    if(nrow(specimen_table %>% 
+            filter(DISEASE_CODE == 4)) > 0){
       
       # Create temporary dataframe
         temp <- specimen_table %>% 
@@ -779,8 +780,8 @@ specimen_checks <- function(files_all,
                 summarise(N = n(), .groups = "drop_last")
       
       # Print message  
-        cat(col_red(pluralize("There {?is/are} {nrow(temp)} specimen{?s} with Rhizocephalan barnacles ('DISEASE_CODE' = 4):\n")))
-      
+        cat(col_red(pluralize("There {?is/are} {nrow(temp)} specimen{?s} with Rhizocephalan barnacles ('DISEASE_CODE' = 4), as potential indicators for rotting clutches:\n")))
+            
       # Loop over combos to ID which catch samples have the issue
         for(i in 1:nrow(temp)){
           
@@ -793,23 +794,43 @@ specimen_checks <- function(files_all,
                                   temp[i,]$SEX == 2 ~ "Female",
                                   temp[i,]$SEX == 3 ~ "Unsexed",
                                   temp[i,]$SEX == 4 ~ "Hermaphrodite")
-            temp_specimenID <- temp[i,]$SPECIMEN_ID
+            temp_disease <- temp[i,]$DISEASE_CODE
           
-          # Add note to Error Report
-            error_iter <- nrow(errors) + 1
-            errors[error_iter, 1] <- "Specimen"
-            errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as having Rhizocephalan barnacles. Was this a flag for a rotting clutch?")
-          
-          # Print error message
-            cat("\n")
-            cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.\n")), sep = "")
+          # Filter specimens
+            specimen_flags <- temp_spec %>% 
+                              mutate(SEX_TEXT = case_when(SEX == 1 ~ "Male", 
+                                                          SEX == 2 ~ "Female",
+                                                          SEX == 3 ~ "Unsexed",
+                                                          SEX == 4 ~ "Hermaphrodite")) %>%
+                              filter(TABLET == temp_tablet,
+                                     SPECIES_NAME == temp_species,
+                                     SAMPLE_MODIFIER == temp_description,
+                                     DISEASE_CODE == temp_disease,
+                                     SEX_TEXT == temp_sex) %>%
+                              arrange(SPECIMEN_ID)
+            
+            for(s in 1:nrow(specimen_flags)){
+              
+              # Set SPECIMEN_ID
+                temp_specimenID <- specimen_flags[s,]$SPECIMEN_ID
+              
+              # Add note to Error Report
+                error_iter <- nrow(errors) + 1
+                errors[error_iter, 1] <- "Specimen"
+                errors[error_iter, 2] <- pluralize("'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "' was identified as having Rhizocephalan barnacles. Was this a flag for a rotting clutch?")
+        
+              # Print error message
+                cat("\n")
+                cat(col_red(pluralize("- 'SPECIMEN_ID' ", temp_specimenID, " in the '", temp_species, ", ", temp_sex, ", ", temp_description, "' sample on Tablet '", temp_tablet, "'.")), sep = "")
+            }
         }
         cat("\n")
     }
     
     
   # Check for invalid disease code
-    if(TRUE %in% (!unique(specimen_table$DISEASE_CODE) %in% c(NA, 1:8))){
+    if(nrow(specimen_table %>% 
+            filter(!DISEASE_CODE %in% c(NA, 1:8))) > 0){
       
       # Create temporary dataframe
         temp_spec <- specimen_table %>% 
