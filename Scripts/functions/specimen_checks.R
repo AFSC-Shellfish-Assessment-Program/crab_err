@@ -774,13 +774,15 @@ specimen_checks <- function(files_all,
             filter(DISEASE_CODE == 4)) > 0){
       
       # Create temporary dataframe
-        temp <- specimen_table %>% 
-                filter(DISEASE_CODE == 4) %>%
+        temp_spec <- specimen_table %>% 
+                     filter(DISEASE_CODE == 4)
+        
+        temp <- temp_spec %>% 
                 group_by(SPECIES_CODE, SPECIES_NAME, TABLET, SEX, SAMPLE_MODIFIER, DISEASE_CODE) %>%
                 summarise(N = n(), .groups = "drop_last")
       
       # Print message  
-        cat(col_red(pluralize("There {?is/are} {nrow(temp)} specimen{?s} with Rhizocephalan barnacles ('DISEASE_CODE' = 4), as potential indicators for rotting clutches:\n")))
+        cat(col_red(pluralize("There {?is/are} {nrow(temp_spec)} specimen{?s} with Rhizocephalan barnacles ('DISEASE_CODE' = 4), as potential indicators for rotting clutches:\n")))
             
       # Loop over combos to ID which catch samples have the issue
         for(i in 1:nrow(temp)){
