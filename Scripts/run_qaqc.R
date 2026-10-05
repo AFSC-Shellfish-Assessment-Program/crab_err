@@ -8,6 +8,8 @@
 #   - Let Shannon know if you come across any unknown errors or illogical options/pathways
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --
 
+
+
 # Step 1. Source overall workflow setup script.
   source("./Scripts/functions/setup.R")
 
@@ -36,4 +38,12 @@
   compile_db <- compile_db_files(metadata)
 
   
+
+# Quick tool to visualize chela measurements taken or anything else???
+  
+  
+# Extra line/function to run to move a specific haul to clean/backup??
+
+  
+    
   
