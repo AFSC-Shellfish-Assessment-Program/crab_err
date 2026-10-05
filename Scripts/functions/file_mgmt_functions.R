@@ -140,8 +140,8 @@ copy_files <- function(files, # specify exactly which files we're applying this 
     }
     
     if(destination == "backup"){
-      dest_path <- paste0("D:/", leg, " - both boats/")
-      # dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/")
+      # dest_path <- paste0("D:/", leg, " - both boats/") 
+      dest_path <- paste0(path, "/USB_backup/", leg, " - both boats/")
     }
     
     
@@ -251,6 +251,8 @@ copy_files <- function(files, # specify exactly which files we're applying this 
 # compile_db_files() 
 #**MAKE a pre-check to make sure there are no duplicate files in the clean!!*
 # - only check duplicate timestamps for haul/tablet, might have 2 tablets for a haul still...
+# - Add common name to “_db” files? and STATION to catch db?
+
 compile_db_files <- function(metadata){
   
   
@@ -268,28 +270,31 @@ compile_db_files <- function(metadata){
   # Read in, combine, and save clean 'Crab Specimen' files
     specimen_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/"), pattern = paste0("_CRAB_SPECIMEN_"), recursive = FALSE) %>%
                    map_df(~read.csv(paste0(clean_dir, "Data Files from Tablet/Crab SPECIMEN Files/", .x))) %>%
-                   write.csv(., paste0(clean_dir, "SPECIMEN_db.csv"), row.names = FALSE)
+                   write.table(., paste0(clean_dir, "SPECIMEN_db.csv"),
+                               row.names = FALSE, na = "", sep = ",")
   
   
   # Read in, combine, and save clean 'Crab Catch' files
     catch_db <- list.files(paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/"), pattern = paste0("_CRAB_CATCH_"), recursive = FALSE) %>%
                 map_df(~read.csv(paste0(clean_dir, "Data Files from Tablet/Crab CATCH Files/", .x))) %>%
-                # group_by(VESSEL, CRUISE, HAUL, STATION, COMMON_NAME, SPECIES_CODE) %>%
-                # # combine weights and catch numbers by species (if 2 tablets were used for the haul)
-                # summarise(WEIGHT = sum(WEIGHT, na.rm = TRUE),
-                #           NUMBER_CRAB = sum(NUMBER_CRAB, na.rm = TRUE), 
-                #           .groups = "drop_last") %>%
-                # # summarize catch numbers by species from specimen table and update catch numbers 
-                # # if there were rounding discrepancies from using 2 tablets 
-                # # (ie. tablet rounds to whole numbers but if the catch was split, 0.4 and 0.4 round down, but 0.8 rounds up)
-                # left_join(., specimen_db %>%
-                #              group_by(CRUISE, VESSEL, HAUL, STATION, SPECIES_CODE) %>%
-                #              summarise(CATCH = sum(SAMPLING_FACTOR)),
-                #           by = join_by(CRUISE, VESSEL, HAUL, STATION, SPECIES_CODE)) %>%
-                # mutate(NUMBER_CRAB = ifelse(CATCH > NUMBER_CRAB, round(CATCH), NUMBER_CRAB)) %>% # will the specimen #s always be larger??
-                # # and really should only be off by 1, right?? hmm think about more
-                # select(-CATCH) %>%
-                write.csv(., paste0(clean_dir, "CATCH_db.csv"), row.names = FALSE)
+                group_by(VESSEL, CRUISE, HAUL, STATION, COMMON_NAME, SPECIES_CODE) %>%
+                # combine weights and catch numbers by species (if 2 tablets were used for the haul)
+                summarise(WEIGHT = sum(WEIGHT, na.rm = TRUE),
+                          NUMBER_CRAB = sum(NUMBER_CRAB, na.rm = TRUE),
+                          .groups = "drop_last") %>%
+                # summarize catch numbers by species from specimen table and update catch numbers
+                # if there were rounding discrepancies from using 2 tablets
+                # (ie. tablet rounds to whole numbers but if the catch was split, 0.4 and 0.4 round down, but 0.8 rounds up)
+                left_join(., specimen_db %>%
+                             group_by(CRUISE, VESSEL, HAUL, STATION, SPECIES_CODE) %>%
+                             summarise(CATCH = sum(SAMPLING_FACTOR)),
+                          by = join_by(CRUISE, VESSEL, HAUL, STATION, SPECIES_CODE)) %>%
+                mutate(NUMBER_CRAB = ifelse(CATCH > NUMBER_CRAB, round(CATCH), NUMBER_CRAB), # will the specimen #s always be larger??
+                       NUMBER_CRAB = round(NUMBER_CRAB)) %>% 
+                # and really should only be off by 1, right?? hmm think about more
+                select(-CATCH) %>%
+                write.table(., paste0(clean_dir, "CATCH_db.csv"), 
+                            row.names = FALSE, na = "", sep = ",")
                 #**.^^ DO WE WANT THIS AUTOMATICALLY COMBINED HERE? ^^.* Would have to drop the HAUL_ID, RECORDING_DEVICE, and ID columns...
     
   # Print message confirming db files have been updated
